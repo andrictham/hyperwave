@@ -178,7 +178,6 @@ body {
 }
 
 :root {
-  --radius: 0.625rem;
   --background: var(--color-white);
   --foreground: var(--color-stone-13);
   --card: var(--color-white);
@@ -211,6 +210,17 @@ body {
   --sidebar-accent-foreground: var(--color-stone-13);
   --sidebar-border: var(--color-stone-2);
   --sidebar-ring: var(--color-sol-5);
+
+  --radius: 0.6rem;
+  --shadow-2xs: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.01);
+  --shadow-xs: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.01);
+  --shadow-sm: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 1px 2px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 1px 2px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow-md: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 2px 4px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow-lg: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 4px 6px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow-xl: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 8px 10px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow-2xl: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.05);
+  --spacing: 0.22rem;
 }
 
 .dark {
@@ -246,13 +256,19 @@ body {
   --sidebar-accent-foreground: var(--color-neptune-0);
   --sidebar-border: var(--color-stone-11);
   --sidebar-ring: var(--color-sol-5);
+
+  --radius: 0.6rem;
+  --shadow-2xs: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.01);
+  --shadow-xs: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.01);
+  --shadow-sm: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 1px 2px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 1px 2px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow-md: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 2px 4px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow-lg: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 4px 6px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow-xl: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.02), 0px 8px 10px -1px hsl(0 3.4483% 5.6863% / 0.02);
+  --shadow-2xl: 0px 0.5px 5px 0px hsl(0 3.4483% 5.6863% / 0.05);
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -284,6 +300,20 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
 }
 
 @layer base {
