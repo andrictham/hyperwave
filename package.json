@@ -13,7 +13,7 @@
     "dev:setup": "turbo -F @hyperwave/backend setup",
     "build": "turbo build",
     "check-types": "turbo check-types",
-    "update-deps": "pnpm dlx taze -r",
+    "update-deps": "pnpm dlx taze -r -w",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

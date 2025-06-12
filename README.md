@@ -44,7 +44,7 @@ Your app will connect to the Convex cloud backend automatically.
 ```
 hyperwave/
 ├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
+│   ├── webapp/         # Frontend application (React + TanStack Router)
 ├── packages/
 │   └── backend/     # Convex backend functions and schema
 
@@ -55,5 +55,9 @@ hyperwave/
 - `pnpm dev`: Start all applications in development mode
 - `pnpm build`: Build all applications
 - `pnpm dev:web`: Start only the web application
+- `pnpm dev:server`: Start only the Convex server
 - `pnpm dev:setup`: Setup and configure your Convex project
 - `pnpm check-types`: Check TypeScript types across all apps
+- `pnpm update-deps`: Update dependencies to the latest versions using taze
+- `pnpm format`: Format all files using Prettier
+- `pnpm format:check`: Check if files are formatted
