@@ -1,0 +1,17 @@
+{
+  "name": "@hyperwave/backend",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "convex dev",
+    "setup": "convex dev --configure --until-success"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "convex": "^1.23.0"
+  }
+}
