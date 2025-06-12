@@ -7,9 +7,6 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**"]
     },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
     "check-types": {
       "dependsOn": ["^check-types"]
     },
@@ -25,6 +22,10 @@
       "outputs": []
     },
     "format:check": {
+      "outputs": []
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
       "outputs": []
     }
   }
