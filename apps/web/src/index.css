@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -7,10 +7,10 @@
 @theme {
   --color-*: initial;
   /* Monochrome */
-  --color-white: #FFFDFC;
-  --color-black: #1C1A19;
+  --color-white: #fffdfc;
+  --color-black: #1c1a19;
 
-    /* Red */
+  /* Red */
   --color-red-14: #220609;
   --color-red-13: #330b11;
   --color-red-12: #430e15;
@@ -163,8 +163,9 @@
   --color-neptune-1: #c9eeee;
   --color-neptune-0: #e8f5f5;
 
-  --font-sans: "Archivo", "Inter", "Geist", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans:
+    "Archivo", "Inter", "Geist", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 html,
@@ -202,7 +203,7 @@ body {
   --chart-3: var(--color-sol-6);
   --chart-4: var(--color-neptune-8);
   --chart-5: var(--color-neptune-10);
-  --sidebar-background: var(--color-stone-0); 
+  --sidebar-background: var(--color-stone-0);
   --sidebar-foreground: var(--color-stone-13);
   --sidebar-primary: var(--color-stone-1);
   --sidebar-primary-foreground: var(--color-stone-13);
