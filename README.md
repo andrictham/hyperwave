@@ -54,7 +54,7 @@ hyperwave/
 
 - `pnpm dev`: Start all applications in development mode
 - `pnpm build`: Build all applications
-- `pnpm dev:web`: Start only the web application
+- `pnpm dev:webapp`: Start only the web application
 - `pnpm dev:server`: Start only the Convex server
 - `pnpm dev:setup`: Setup and configure your Convex project
 - `pnpm check-types`: Check TypeScript types across all apps
