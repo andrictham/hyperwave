@@ -6,6 +6,8 @@
 
 - Guidelines for how to use Convex, which powers the backend of this stack, as well as reactive data queries and mutations on the frontend, can be found in the section below titled “Convex guidelines”.
 
+- Guidelines for how to use the Convex “AI Agent Component” [(@convex-dev/agent)](https://github.com/get-convex/agent) can be found in the section below titled “Convex Agent Component guidelines”.
+
 - Guidelines for how to use TanStack Router, which powers the frontend routing of this stack, can be found in `./apps/webapp/AGENTS.md`.
 
 # Convex guidelines
@@ -735,4 +737,1137 @@ export default defineSchema({
 export default function App() {
   return <div>Hello World</div>;
 }
+```
+
+# Convex Agent Component guidelines
+
+Source: https://context7.com/get-convex/agent/llms.txt
+
+TITLE: Defining and Using a Convex AI Agent in TypeScript
+DESCRIPTION: Illustrates how to define an AI agent using the `Agent` class from `@convex-dev/agent` and integrate it into Convex actions. This example demonstrates creating a new chat thread, generating text based on a prompt, and continuing an existing thread, showcasing the agent's ability to manage conversation history.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_1
+
+LANGUAGE: ts
+CODE:
+
+```
+// Define an agent similarly to the AI SDK
+const supportAgent = new Agent(components.agent, {
+  chat: openai.chat("gpt-4o-mini"),
+  textEmbedding: openai.embedding("text-embedding-3-small"),
+  instructions: "You are a helpful assistant.",
+  tools: { accountLookup, fileTicket, sendEmail },
+});
+
+// Use the agent from within a normal action:
+export const createThreadAndPrompt = action({
+  args: { prompt: v.string() },
+  handler: async (ctx, { prompt }) => {
+    const userId = await getUserId(ctx);
+    // Start a new thread for the user.
+    const { threadId, thread } = await supportAgent.createThread(ctx, { userId});
+    // Creates a user message with the prompt, and an assistant reply message.
+    const result = await thread.generateText({ prompt });
+    return { threadId, text: result.text };
+  },
+});
+
+// Pick up where you left off, with the same or a different agent:
+export const continueThread = action({
+  args: { prompt: v.string(), threadId: v.string() },
+  handler: async (ctx, { prompt, threadId }) => {
+    // Continue a thread, picking up where you left off.
+    const { thread } = await anotherAgent.continueThread(ctx, { threadId });
+    // This includes previous message history from the thread automatically.
+    const result = await thread.generateText({ prompt });
+    return result.text;
+  },
+});
+```
+
+---
+
+TITLE: Generating Text with a Convex Agent Thread
+DESCRIPTION: Explains how to use the `generateText` method on an agent thread to produce text responses. It notes that the agent's default chat model is used, similar to the AI SDK's `generateText` functionality.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_7
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const { thread } = await supportAgent.createThread(ctx);
+// OR
+const { thread } = await supportAgent.continueThread(ctx, { threadId });
+
+const result = await thread.generateText({ prompt });
+```
+
+---
+
+TITLE: Installing the Convex Agent npm Package
+DESCRIPTION: Provides the npm command to add the `@convex-dev/agent` package to your project's dependencies, making the component available for use.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_2
+
+LANGUAGE: ts
+CODE:
+
+```
+npm install @convex-dev/agent
+```
+
+---
+
+TITLE: Create Convex-aware Tool using `createTool` Wrapper
+DESCRIPTION: Demonstrates creating a tool with access to the Convex context (userId, threadId, messageId, runQuery, runMutation, runAction) using the `createTool` function, a wrapper around the AI SDK's `tool` function. An example of searching ideas in the database is provided.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_11
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+export const ideaSearch = createTool({
+  description: "Search for ideas in the database",
+  args: z.object({ query: z.string() }),
+  handler: async (ctx, args): Promise<Array<Idea>> => {
+    // ctx has userId, threadId, messageId, runQuery, runMutation, and runAction
+    const ideas = await ctx.runQuery(api.ideas.searchIdeas, { query: args.query });
+    console.log("found ideas", ideas);
+    return ideas;
+  },
+});
+```
+
+---
+
+TITLE: Generating Structured Objects with a Convex Agent Thread
+DESCRIPTION: Demonstrates how to use the `generateObject` method to produce structured JSON objects based on a Zod schema. It clarifies that the agent's default chat model is used, mirroring the AI SDK's object generation capabilities.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_8
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+import { z } from "zod";
+
+const result = await thread.generateObject({
+  prompt: "Generate a plan based on the conversation so far",
+  schema: z.object({...}),
+});
+```
+
+---
+
+TITLE: Using Agent Actions within a Convex Workflow
+DESCRIPTION: Demonstrates how to define and use agent actions and mutations within a Convex Workflow component. This example shows a complete flow for handling a support request, including creating a thread, generating text, structuring output, and sending a user message, leveraging durable workflows for reliability.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_22
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const workflow = new WorkflowManager(components.workflow);
+
+export const supportAgentWorkflow = workflow.define({
+  args: { prompt: v.string(), userId: v.string() },
+  handler: async (step, { prompt, userId }) => {
+    const { threadId } = await step.runMutation(internal.example.createThread, {
+      userId, title: "Support Request",
+    });
+    const suggestion = await step.runAction(internal.example.getSupport, {
+      threadId, userId, prompt,
+    });
+    const { object } = await step.runAction(internal.example.getStructuredSupport, {
+      userId, message: suggestion,
+    });
+    await step.runMutation(internal.example.sendUserMessage, {
+      userId, message: object.suggestion,
+    });
+  },
+});
+```
+
+---
+
+TITLE: Configure Message Context Options for Convex Agent
+DESCRIPTION: Customize the history included per-message using `contextOptions` in the Agent constructor or per-message. Options include controlling tool call inclusion, recent message count, and detailed search configurations (limit, text/vector search, message range, and cross-thread search).
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_9
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const result = await thread.generateText({ prompt }, {
+  // Values shown are the defaults.
+  contextOptions: {
+    // Whether to include tool messages in the context.
+    includeToolCalls: false,
+    // How many recent messages to include. These are added after the search
+    // messages, and do not count against the search limit.
+    recentMessages: 100,
+    // Options for searching messages via text and/or vector search.
+    searchOptions: {
+      limit: 10, // The maximum number of messages to fetch.
+      textSearch: false, // Whether to use text search to find messages.
+      vectorSearch: false, // Whether to use vector search to find messages.
+      // Note, this is after the limit is applied.
+      // E.g. this will quadruple the number of messages fetched.
+      // (two before, and one after each message found in the search)
+      messageRange: { before: 2, after: 1 },
+    },
+    // Whether to search across other threads for relevant messages.
+    // By default, only the current thread is searched.
+    searchOtherThreads: false,
+  },
+
+```
+
+---
+
+TITLE: Creating a Convex Agent with AI SDK
+DESCRIPTION: Demonstrates how to initialize a Convex `Agent` instance, configuring it with a chat model, instructions, custom tools (Convex and AI SDK), an embedding model, and various options for context, storage, steps, retries, and usage tracking.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_4
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+import { tool } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+import { Agent, createTool } from "@convex-dev/agent";
+import { components } from "./_generated/api";
+
+// Define an agent similarly to the AI SDK
+const supportAgent = new Agent(components.agent, {
+  // The chat completions model to use for the agent.
+  chat: openai.chat("gpt-4o-mini"),
+  // The default system prompt if not overriden.
+  instructions: "You are a helpful assistant.",
+  tools: {
+    // Convex tool
+    myConvexTool: createTool({
+      description: "My Convex tool",
+      args: z.object({...}),
+      // Note: annotate the return type of the handler to avoid type cycles.
+      handler: async (ctx, args): Promise<string> => {
+        return "Hello, world!";
+      },
+    }),
+    // Standard AI SDK tool
+    myTool: tool({ description, parameters, execute: () => {}}),
+  },
+  // Embedding model to power vector search of message history (RAG).
+  textEmbedding: openai.embedding("text-embedding-3-small"),
+  // Used for fetching context messages. See [below](#configuring-the-context-of-messages)
+  contextOptions,
+  // Used for storing messages. See [below](#configuring-the-storage-of-messages)
+  storageOptions,
+  // Used for limiting the number of steps when tool calls are involved.
+  // NOTE: if you want tool calls to happen automatically with a single call,
+  // you need to set this to something greater than 1 (the default).
+  maxSteps: 1,
+  // Used for limiting the number of retries when a tool call fails. Default: 3.
+  maxRetries: 3,
+  // Used for tracking token usage. See [below](#tracking-token-usage)
+  usageHandler: async (ctx, { model, usage }) => {
+    // ... log, save usage to your database, etc.
+  },
+});
+```
+
+---
+
+TITLE: Continuing an Existing Agent Thread in Convex
+DESCRIPTION: Shows how to resume an existing conversation thread using the agent from a Convex action. It highlights how the agent automatically includes previous message history and allows for searching user history for relevant context.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_6
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+// Pick up where you left off:
+export const continueThread = action({
+  args: { prompt: v.string(), threadId: v.string() },
+  handler: async (ctx, { prompt, threadId }): Promise<string> => {
+    await authorizeThreadAccess(ctx, threadId);
+    // This includes previous message history from the thread automatically.
++   const { thread } = await supportAgent.continueThread(ctx, { threadId });
+    const result = await thread.generateText({ prompt });
+    return result.text;
+  },
+});
+```
+
+---
+
+TITLE: Exposing Agent Capabilities: Generate Structured Object Action
+DESCRIPTION: Illustrates how to expose a standalone Convex action that generates a structured object, defined by a Zod schema, providing detailed analysis and suggestions.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_20
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+export const getStructuredSupport = supportAgent.asObjectAction({
+  schema: z.object({
+    analysis: z.string().describe("A detailed analysis of the user's request."),
+    suggestion: z.string().describe("A suggested action to take.")
+  }),
+});
+```
+
+---
+
+TITLE: Starting a New Agent Thread in Convex
+DESCRIPTION: Illustrates how to initiate a new conversation thread with the agent from a Convex mutation. It shows how to associate the thread with a user ID for history tracking and future retrieval.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_5
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+// Use the agent from within a normal action:
+export const createThread = mutation({
+  args: {},
+  handler: async (ctx): Promise<{ threadId: string }> => {
+    const userId = await getUserId(ctx);
+    // Start a new thread for the user.
+    const { threadId } = await supportAgent.createThread(ctx, { userId });
+    return { threadId };
+  },
+});
+```
+
+---
+
+TITLE: Saving Messages and Asynchronous Generation in Convex Agent
+DESCRIPTION: This snippet demonstrates how to save messages in a Convex mutation and then trigger asynchronous generation of text and embeddings using an internal action. This approach allows for optimistic UI updates and handles embedding generation for messages saved outside of actions.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_14
+
+LANGUAGE: ts
+CODE:
+
+```
+export const sendMessage = mutation({
+  args: { threadId: v.id("threads"), prompt: v.string() },
+  handler: async (ctx, { threadId, prompt }) => {
+    const userId = await getUserId(ctx);
+    const { messageId } = await agent.saveMessage(ctx, {
+      threadId, userId, prompt,
+      skipEmbeddings: true,
+    });
+    await ctx.scheduler.runAfter(0, internal.example.myAsyncAction, {
+      threadId, promptMessageId: messageId,
+    });
+  }
+});
+
+export const myAsyncAction = internalAction({
+  args: { threadId: v.string(), promptMessageId: v.string() },
+  handler: async (ctx, { threadId, promptMessageId }) => {
+    // Generate embeddings for the prompt message
+    await supportAgent.generateAndSaveEmbeddings(ctx, { messageIds: [promptMessageId] });
+    const { thread } = await supportAgent.continueThread(ctx, { threadId });
+    await thread.generateText({ promptMessageId });
+  },
+});
+```
+
+---
+
+TITLE: Convex Server Query for Streaming Chat Messages
+DESCRIPTION: Defines a Convex query `listThreadMessages` that paginates over messages and integrates real-time streams using `syncStreams` from `@convex-dev/agent`. It accepts `threadId`, `paginationOpts`, and `streamArgs` to manage message retrieval and streaming deltas.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/chat-streaming/README.md#_snippet_0
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+import { paginationOptsValidator } from "convex/server";
+import { vStreamArgs } from "@convex-dev/agent/react";
+
+ export const listThreadMessages = query({
+   args: {
+     threadId: v.string(),
+     paginationOpts: paginationOptsValidator,
+     streamArgs: vStreamArgs,
+     //... other arguments you want
+   },
+   handler: async (ctx, { threadId, paginationOpts, streamArgs }) => {
+     // await authorizeThreadAccess(ctx, threadId);
+     const paginated = await agent.listMessages(ctx, { threadId, paginationOpts });
+     const streams = await agent.syncStreams(ctx, { threadId, streamArgs });
+     // Here you could filter out / modify the documents & stream deltas.
+     return { ...paginated, streams };
+   },
+ });
+```
+
+---
+
+TITLE: Define Convex Tool at Runtime with `tool` Function
+DESCRIPTION: Illustrates how to define a tool at runtime within a specific context, allowing the tool to access variables like `ActionCtx` and `teamId`. This method uses the raw `tool` function and shows how to execute a Convex query within the tool's `execute` handler.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_12
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+async function createTool(ctx: ActionCtx, teamId: Id<"teams">) {
+  const myTool = tool({
+    description: "My tool",
+    parameters: z.object({...}),
+    execute: async (args, options) => {
+      return await ctx.runQuery(internal.foo.bar, args);
+    },
+  });
+}
+```
+
+---
+
+TITLE: Convex Server Query for Streaming Chat Messages (`listThreadMessages`)
+DESCRIPTION: This TypeScript snippet defines the `listThreadMessages` query on the Convex server. It's responsible for paginating existing messages and integrating real-time stream deltas using `agent.syncStreams`. The query accepts `threadId`, `paginationOpts`, and `streamArgs`, allowing for flexible message retrieval and stream management.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/chat-basic/README.md#_snippet_0
+
+LANGUAGE: typescript
+CODE:
+
+```
+import { paginationOptsValidator } from "convex/server";
+import { vStreamArgs } from "@convex-dev/agent/react";
+
+ export const listThreadMessages = query({
+   args: {
+     threadId: v.string(),
+     paginationOpts: paginationOptsValidator,
+     streamArgs: vStreamArgs,
+     //... other arguments you want
+   },
+   handler: async (ctx, { threadId, paginationOpts, streamArgs }) => {
+     // await authorizeThreadAccess(ctx, threadId);
+     const paginated = await agent.listMessages(ctx, { threadId, paginationOpts });
+     const streams = await agent.syncStreams(ctx, { threadId, streamArgs });
+     // Here you could filter out / modify the documents & stream deltas.
+     return { ...paginated, streams };
+   },
+ });
+```
+
+---
+
+TITLE: Configuring Convex Agent in convex.config.ts
+DESCRIPTION: Demonstrates how to integrate the Convex Agent component into your Convex application by importing and using it within the `defineApp` function in `convex/convex.config.ts`, enabling its functionalities.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_3
+
+LANGUAGE: ts
+CODE:
+
+```
+// convex/convex.config.ts
+import { defineApp } from "convex/server";
+import agent from "@convex-dev/agent/convex.config";
+
+const app = defineApp();
+app.use(agent);
+
+export default app;
+```
+
+---
+
+TITLE: Optimistic Update for Sending Chat Messages (Custom `optimisticallySendMessage` Usage)
+DESCRIPTION: This TypeScript example demonstrates how to use `optimisticallySendMessage` within a custom `withOptimisticUpdate` callback. This approach is necessary when the mutation's arguments don't directly align with the expected `threadId` and `prompt` structure, allowing for manual mapping of values.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/chat-basic/README.md#_snippet_4
+
+LANGUAGE: typescript
+CODE:
+
+```
+import { optimisticallySendMessage } from "@convex-dev/agent/react";
+
+const sendMessage = useMutation(
+  api.chatStreaming.streamStoryAsynchronously,
+).withOptimisticUpdate(
+  (store, args) => {
+    optimisticallySendMessage(api.chatStreaming.listThreadMessages)(store, {
+      threadId: /* get the threadId from your args / context */,
+      prompt: /* change your args into the user prompt. */,
+    })
+  }
+);
+```
+
+---
+
+TITLE: React Hook for Consuming Streaming Thread Messages
+DESCRIPTION: Illustrates the client-side usage of `useThreadMessages` from `@convex-dev/agent/react` to fetch and stream messages for a given `threadId`. The `stream: true` option enables real-time updates, allowing the component to react to incoming message deltas.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/chat-streaming/README.md#_snippet_1
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+import { useThreadMessages } from "@convex-dev/agent/react";
+
+// in the component
+  const messages = useThreadMessages(
+    api.streaming.listThreadMessages,
+    { threadId },
+    { initialNumItems: 10, stream: true },
+  );
+```
+
+---
+
+TITLE: React Hook for Consuming Streaming Chat Messages (`useThreadMessages`)
+DESCRIPTION: This client-side TypeScript snippet demonstrates how to use the `useThreadMessages` hook from `@convex-dev/agent/react`. By passing `stream: true` in the options, the hook enables real-time consumption of message deltas, making it suitable for building dynamic and responsive chat interfaces.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/chat-basic/README.md#_snippet_1
+
+LANGUAGE: typescript
+CODE:
+
+```
+import { useThreadMessages } from "@convex-dev/agent/react";
+
+// in the component
+  const messages = useThreadMessages(
+    api.streaming.listThreadMessages,
+    { threadId },
+    { initialNumItems: 10, stream: true },
+  );
+```
+
+---
+
+TITLE: Logging Raw LLM Requests and Responses with rawRequestResponseHandler
+DESCRIPTION: This example shows how to configure an `Agent` with a `rawRequestResponseHandler` to capture the raw request and response data from the underlying Large Language Model (LLM). This is useful for debugging, auditing, or integrating with external logging services like Axiom via Convex's Log Streaming.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_32
+
+LANGUAGE: ts
+CODE:
+
+```
+const supportAgent = new Agent(components.agent, {
+  ...
+  rawRequestResponseHandler: async (ctx, { request, response }) => {
+    console.log("request", request);
+    console.log("response", response);
+  }
+});
+```
+
+---
+
+TITLE: Asynchronous Image/File Upload and LLM Response Generation in Convex
+DESCRIPTION: Demonstrates the standard four-step process for handling images and files with `@convex-dev/agent`, involving initial file upload, sending a message with the file reference, asynchronously generating an LLM response, and querying thread messages. This approach optimizes client-side responsiveness with optimistic updates.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/files-images/README.md#_snippet_0
+
+LANGUAGE: ts
+CODE:
+
+```
+    const { file } = await storeFile(
+      ctx,
+      components.agent,
+      new Blob([bytes], { type: mimeType }),
+      filename,
+      sha256,
+    );
+    const { fileId, url, storageId } = file;
+```
+
+LANGUAGE: ts
+CODE:
+
+```
+// in your mutation
+    const { filePart, imagePart } = await getFile(
+      ctx,
+      components.agent,
+      fileId,
+    );
+    const { messageId } = await fileAgent.saveMessage(ctx, {
+      threadId,
+      message: {
+        role: "user",
+        content: [
+          imagePart ?? filePart, // if it's an image, prefer that kind.
+          { type: "text", text: "What is this image?" }
+        ],
+      },
+      metadata: { fileIds: [fileId] }, // IMPORTANT: this tracks the file usage.
+    });
+```
+
+LANGUAGE: ts
+CODE:
+
+```
+// in an action
+await thread.generateText({ promptMessageId: messageId });
+```
+
+LANGUAGE: ts
+CODE:
+
+```
+// in a query
+const messages = await agent.listMessages(ctx, { threadId, paginationOpts });
+```
+
+---
+
+TITLE: Convex Agent Tool Provisioning Points
+DESCRIPTION: This API documentation outlines the various points at which tools can be provided to a Convex agent, including the Agent constructor, thread creation, thread continuation, and on thread functions. It also clarifies the precedence rules for tool arguments.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_13
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+Tools can be provided at various points, with later specifications overriding earlier ones:
+- Agent contructor: `new Agent(components.agent, { tools: {...} })`
+- Creating a thread: `createThread(ctx, { tools: {...} })`
+- Continuing a thread: `continueThread(ctx, { tools: {...} })`
+- On thread functions: `thread.generateText({ tools: {...} })`
+- Outside of a thread: `supportAgent.generateText(ctx, {}, { tools: {...} })`
+
+Tool precedence: `args.tools ?? thread.tools ?? agent.options.tools`
+```
+
+---
+
+TITLE: Tracking Agent Token Usage with usageHandler
+DESCRIPTION: This snippet demonstrates how to provide a `usageHandler` to a Convex `Agent` instance to track token usage. The handler receives details like `userId`, `threadId`, `model`, `provider`, and `usage`, allowing developers to log or save this information for billing or analytics. It can be defined per agent, per-thread, or per-message.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_31
+
+LANGUAGE: ts
+CODE:
+
+```
+const supportAgent = new Agent(components.agent, {
+  ...
+  usageHandler: async (ctx, args) => {
+    const {
+      // Who used the tokens
+      userId, threadId, agentName,
+      // What LLM was used
+      model, provider,
+      // How many tokens were used (extra info is available in providerMetadata)
+      usage, providerMetadata
+    } = args;
+    // ... log, save usage to your database, etc.
+  }
+});
+```
+
+---
+
+TITLE: Optimistic Update for Sending Chat Messages (Simple `optimisticallySendMessage`)
+DESCRIPTION: This TypeScript snippet illustrates a straightforward way to implement optimistic UI updates for sending messages using `useMutation` and `optimisticallySendMessage`. It automatically inserts a temporary message into the UI, which is then replaced or confirmed once the server mutation completes successfully.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/chat-basic/README.md#_snippet_3
+
+LANGUAGE: typescript
+CODE:
+
+```
+const sendMessage = useMutation(api.streaming.streamStoryAsynchronously)
+  .withOptimisticUpdate(optimisticallySendMessage(api.streaming.listThreadMessages));
+```
+
+---
+
+TITLE: Generating and Saving Images with OpenAI DALL-E 2 via Convex Action
+DESCRIPTION: Provides a command-line example demonstrating how to trigger an action in Convex (`filesImages:generateImageOneShot`) to generate an image using OpenAI's DALL-E 2 based on a given prompt, and then save the resulting image to a thread.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/files-images/README.md#_snippet_3
+
+LANGUAGE: sh
+CODE:
+
+```
+npx convex run filesImages:generateImageOneShot '{prompt: "make a picture of a cat" }'
+```
+
+---
+
+TITLE: Managing Thread Information in Convex Agent
+DESCRIPTION: This section provides examples for listing threads associated with a user, retrieving a specific thread by its ID, and updating a thread's metadata such as title, summary, and status.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_17
+
+LANGUAGE: ts
+CODE:
+
+```
+const threads = await ctx.runQuery(components.agent.threads.listThreadsByUserId, {
+  userId,
+  order: "desc",
+  paginationOpts: { cursor: null, numItems: 10 }
+});
+
+const thread = await ctx.runQuery(components.agent.threads.getThread, {
+  threadId,
+});
+
+await ctx.runMutation(components.agent.threads.updateThread, {
+  threadId,
+  { title, summary, status }
+});
+```
+
+---
+
+TITLE: Optimistic Update for Sending Messages (Direct Integration)
+DESCRIPTION: Demonstrates using `optimisticallySendMessage` directly with `useMutation` to immediately display a sent message in the UI before the server mutation completes. This helper function automatically inserts the ephemeral message at the top of the specified query's message list.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/chat-streaming/README.md#_snippet_3
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const sendMessage = useMutation(api.streaming.streamStoryAsynchronously)
+  .withOptimisticUpdate(optimisticallySendMessage(api.streaming.listThreadMessages));
+```
+
+---
+
+TITLE: React Hooks for Text Delta Streaming
+DESCRIPTION: Introduces `useThreadMessages` and `useStreamingThreadMessages` React hooks for text delta streaming, providing real-time updates for chat UIs. Also includes `useSmoothText` for smoother UI and `optimisticallySendMessage` for immediate feedback.
+SOURCE: https://github.com/get-convex/agent/blob/main/CHANGELOG.md#_snippet_13
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+React Hooks:
+  - `useThreadMessages()`: For general thread message access.
+  - `useStreamingThreadMessages()`: For real-time text delta streaming.
+  - `useSmoothText()`: Provides smooth text rendering with auto-adjusting stream rate.
+  - `optimisticallySendMessage()`: For immediate UI feedback on user messages.
+```
+
+---
+
+TITLE: Agent `rawRequestResponseHandler` for LLM Debugging
+DESCRIPTION: Adds a new argument to the Agent constructor, `rawRequestResponseHandler`, providing a hook to log or save raw LLM request and response data for debugging model behavior and headers.
+SOURCE: https://github.com/get-convex/agent/blob/main/CHANGELOG.md#_snippet_1
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+Agent:
+  __init__(..., rawRequestResponseHandler: (request: any, response: any) => void)
+    rawRequestResponseHandler: A callback function to handle raw LLM requests and responses for debugging.
+```
+
+---
+
+TITLE: Inline Image/File Saving during LLM Text Generation in Convex
+DESCRIPTION: Illustrates how to directly include image or file data within the `message` argument when calling `generateText` in a Convex action. This method automatically handles saving the file to storage if its size exceeds 64KB, associating a file ID with the message.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/files-images/README.md#_snippet_1
+
+LANGUAGE: ts
+CODE:
+
+```
+await thread.generateText({
+  message: {
+    role: "user",
+    content: [
+      { type: "image", image: imageBytes, mimeType: "image/png" },
+      { type: "text", text: "What is this image?" }
+    ]
+  }
+});
+```
+
+---
+
+TITLE: New Feature: Flexible Tool Passing
+DESCRIPTION: Tools can now be passed at multiple levels: agent definition, thread definition, or per-message call. This provides greater flexibility for defining tools based on runtime context.
+SOURCE: https://github.com/get-convex/agent/blob/main/CHANGELOG.md#_snippet_27
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+Tool Definition:
+  - Pass tools at agent definition.
+  - Pass tools at thread definition.
+  - Pass tools per-message call.
+```
+
+---
+
+TITLE: Generating Embeddings for Messages
+DESCRIPTION: Shows how to generate vector embeddings for a given set of messages using `supportAgent.generateEmbeddings`, which can be used for semantic search or other AI tasks.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_25
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const embeddings = await supportAgent.generateEmbeddings([
+  { role: "user", content: "What is love?" },
+]);
+```
+
+---
+
+TITLE: Searching for Context Messages in Convex Agent
+DESCRIPTION: This snippet illustrates how to manually search for messages within a thread or for a user, which can be useful for including custom context. It accepts ContextOptions, such as 'includeToolCalls' and 'searchOptions', and allows filtering messages before a specific 'beforeMessageId'.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_16
+
+LANGUAGE: ts
+CODE:
+
+```
+import type { MessageDoc } from "@convex-dev/agent";
+
+const messages: MessageDoc[] = await supportAgent.fetchContextMessages(ctx, {
+  threadId, messages: [{ role, content }], contextOptions
+});
+```
+
+---
+
+TITLE: Exposing Agent Capabilities: Generate Text Action
+DESCRIPTION: Shows how to expose the agent's text generation capability (similar to `thread.generateText`) as a Convex action, configurable with parameters like `maxSteps`.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_19
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+export const getSupport = supportAgent.asTextAction({
+  maxSteps: 10,
+});
+```
+
+---
+
+TITLE: Configure Message Storage Options for Convex Agent
+DESCRIPTION: Control how messages are saved using `storageOptions`, which can be passed to the Agent constructor or per-message. This allows specifying whether to save 'all', 'none', or just 'promptAndOutput' messages, useful for managing context messages that aren't user requests.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_10
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const result = await thread.generateText({ messages }, {
+  storageOptions: {
+    saveMessages: "all" | "none" | "promptAndOutput";
+  },
+});
+```
+
+---
+
+TITLE: Exposing Agent Capabilities: Save Messages Mutation
+DESCRIPTION: Explains how to expose the agent's `saveMessages` capability as a Convex mutation for explicit message saving, which is useful for ensuring idempotency in workflows.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_21
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+export const saveMessages = supportAgent.asSaveMessagesMutation();
+```
+
+---
+
+TITLE: Resolving Circular Dependencies by Explicitly Typing Workflow Handlers
+DESCRIPTION: This snippet illustrates how to resolve circular dependencies in Convex workflows and regular functions by explicitly typing their return values. This is crucial when functions depend on each other's return types, especially with the `internal.foo.bar` function referencing pattern. Adding `Promise<string>` to the handler's return type helps break these cycles.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_33
+
+LANGUAGE: ts
+CODE:
+
+```
+export const supportAgentWorkflow = workflow.define({
+  args: { prompt: v.string(), userId: v.string(), threadId: v.string() },
+  handler: async (step, { prompt, userId, threadId }): Promise<string> => {
+    // ...
+  }
+});
+
+// And regular functions too:
+export const myFunction = action({
+  args: { prompt: v.string() },
+  handler: async (ctx, { prompt }): Promise<string> => {
+    // ...
+  }
+});
+```
+
+---
+
+TITLE: Fetching Thread Message History in Convex Agent
+DESCRIPTION: This example shows how to retrieve the full message history for a given thread using a Convex query. The fetched messages will include additional details such as usage information.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_15
+
+LANGUAGE: ts
+CODE:
+
+```
+import type { MessageDoc } from "@convex-dev/agent";
+
+export const getMessages = query({
+  args: { threadId: v.id("threads") },
+  handler: async (ctx, { threadId }): Promise<MessageDoc[]> => {
+    const messages = await agent.listMessages(ctx, {
+      threadId,
+      paginationOpts: { cursor: null, numItems: 10 }
+    });
+    return messages.page;
+  },
+});
+```
+
+---
+
+TITLE: Paginating and Retrieving Message Embeddings
+DESCRIPTION: Demonstrates how to retrieve message embeddings from the Convex vector index using `components.agent.vector.index.paginate`, allowing for paginated access to stored embeddings.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_26
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const messages = await ctx.runQuery(
+  components.agent.vector.index.paginate,
+  { vectorDimension: 1536, cursor: null, limit: 10 }
+);
+```
+
+---
+
+TITLE: Inserting Message Embeddings in Batch
+DESCRIPTION: Illustrates how to insert new message embeddings into the Convex vector index in batch using `components.agent.vector.index.insertBatch`, including details like model, table, user/thread IDs, and optional message ID.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_29
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const ids = await ctx.runMutation(
+  components.agent.vector.index.insertBatch, {
+    vectorDimension: 1536,
+    vectors: [
+      {
+        model: "gpt-4o-mini",
+        table: "messages",
+        userId: "123",
+        threadId: "123",
+        vector: embedding,
+        // Optional, if you want to update the message with the embeddingId
+        messageId: messageId,
+      },
+    ],
+  }
+);
+```
+
+---
+
+TITLE: Generating Text Without an Associated Thread
+DESCRIPTION: Provides an example of how to directly generate text using `supportAgent.generateText` without requiring an existing thread, useful for one-off text generation tasks.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_23
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const result = await supportAgent.generateText(ctx, { userId }, { prompt });
+```
+
+---
+
+TITLE: Passing Custom Stored File URLs to LLM for Image/File Processing
+DESCRIPTION: Shows how to use a pre-stored file's URL directly in the `message` content when generating text with an LLM. This allows for integration with custom file storage solutions, leveraging Convex's `ctx.storage` to obtain public URLs.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/files-images/README.md#_snippet_2
+
+LANGUAGE: ts
+CODE:
+
+```
+const storageId = await ctx.storage.store(blob)
+const url = await ctx.storage.getUrl(storageId);
+
+await thread.generateText({
+  message: {
+    role: "user",
+    content: [
+      { type: "image", data: url, mimeType: blob.type },
+      { type: "text", text: "What is this image?" }
+    ]
+  }
+});
+```
+
+---
+
+TITLE: Manually Saving Messages to the Database
+DESCRIPTION: Illustrates how to manually save messages to the Convex database using `agent.saveMessages`, including specifying thread ID, user ID, message content, and optional metadata.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_24
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const { lastMessageId, messageIds} = await agent.saveMessages(ctx, {
+  threadId, userId,
+  messages: [{ role, content }],
+  metadata: [{ reasoning, usage, ... }] // See MessageWithMetadata type
+});
+```
+
+---
+
+TITLE: Optimistic Update for Sending Messages (Custom Argument Mapping)
+DESCRIPTION: Provides an example of integrating `optimisticallySendMessage` into a `useMutation`'s `withOptimisticUpdate` when the mutation arguments don't directly match the expected `{ threadId, prompt }` structure. It requires manually mapping the arguments within a custom optimistic update function.
+SOURCE: https://github.com/get-convex/agent/blob/main/examples/chat-streaming/README.md#_snippet_4
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+import { optimisticallySendMessage } from "@convex-dev/agent/react";
+
+const sendMessage = useMutation(
+  api.chatStreaming.streamStoryAsynchronously,
+).withOptimisticUpdate(
+  (store, args) => {
+    optimisticallySendMessage(api.chatStreaming.listThreadMessages)(store, {
+      threadId: /* get the threadId from your args / context */,
+      prompt: /* change your args into the user prompt. */,
+    })
+  }
+);
+```
+
+---
+
+TITLE: Exposing Agent Capabilities: Create Thread Mutation
+DESCRIPTION: Demonstrates how to expose the agent's `createThread` capability as a standalone Convex mutation, allowing it to be used as a step in a workflow.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_18
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+export const createThread = supportAgent.createThreadMutation();
+```
+
+---
+
+TITLE: Updating Message Embeddings in Batch
+DESCRIPTION: Explains how to update existing message embeddings in batch using `components.agent.vector.index.updateBatch`, which is useful for migrations to new embedding models or data updates.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_27
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+const messages = await ctx.runQuery(components.agent.vector.index.updateBatch, {
+  vectors: [
+    { model: "gpt-4o-mini", vector: embedding, id: msg.embeddingId },
+  ],
+});
+```
+
+---
+
+TITLE: New Feature: Improved File API
+DESCRIPTION: The file API has been enhanced to allow for more correct upserting and management of files. New functions are available to add, use existing, or copy files, with automatic deletion when messages referencing them are removed.
+SOURCE: https://github.com/get-convex/agent/blob/main/CHANGELOG.md#_snippet_19
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+agent.files.addFile(fileData: Blob, metadata?: FileMetadata): Promise<string>
+agent.files.useExistingFile(fileId: string): Promise<string>
+agent.files.copyFile(fileId: string): Promise<string>
+  - Purpose: Track images and files in messages, with reference counting for safe deletion.
+```
+
+---
+
+TITLE: New Feature: Enhanced Message Metadata Storage
+DESCRIPTION: Model, provider, usage, warnings, and other fields previously hidden in the `steps` table are now directly stored on the `messages` table for easier access and persistence.
+SOURCE: https://github.com/get-convex/agent/blob/main/CHANGELOG.md#_snippet_31
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+MessageDoc fields:
+  - `model`: string
+  - `provider`: string
+  - `usage`: object (e.g., `{ promptTokens: number, completionTokens: number }`)
+  - `warnings`: string[]
+  - Other relevant metadata
+```
+
+---
+
+TITLE: Deleting Message Embeddings in Batch
+DESCRIPTION: Shows how to delete multiple message embeddings from the Convex vector index simultaneously using `components.agent.vector.index.deleteBatch` by providing a list of embedding IDs.
+SOURCE: https://github.com/get-convex/agent/blob/main/README.md#_snippet_28
+
+LANGUAGE: TypeScript
+CODE:
+
+```
+await ctx.runMutation(components.agent.vector.index.deleteBatch, {
+  ids: [embeddingId1, embeddingId2],
+});
+```
+
+---
+
+TITLE: Agent File and Image Handling API
+DESCRIPTION: Introduces new APIs for saving, retrieving metadata, and managing reference counting for files and images used in messages. Includes automatic saving of large input messages and a mechanism to vacuum unused files.
+SOURCE: https://github.com/get-convex/agent/blob/main/CHANGELOG.md#_snippet_0
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+Agent:
+  - New file handling APIs for saving and getting metadata about files.
+  - Automatic reference counting for files in messages.
+  - Vacuum unused files.
+```
+
+---
+
+TITLE: Asynchronous and Lazy Embedding Generation
+DESCRIPTION: Adds support for generating embeddings asynchronously to save messages in mutations and allows embedding generation to be done lazily by default, improving performance and flexibility.
+SOURCE: https://github.com/get-convex/agent/blob/main/CHANGELOG.md#_snippet_7
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+Embeddings:
+  - Support for asynchronous generation during message saving.
+  - Default behavior: Lazy embedding generation.
+```
+
+---
+
+TITLE: Agent Thread Metadata Management APIs
+DESCRIPTION: Introduces new APIs on agent and thread objects to get and update thread-specific metadata, allowing for more flexible thread management.
+SOURCE: https://github.com/get-convex/agent/blob/main/CHANGELOG.md#_snippet_6
+
+LANGUAGE: APIDOC
+CODE:
+
+```
+Agent/Thread Objects:
+  - `getThreadMetadata()`: Retrieves metadata associated with a thread.
+  - `updateThreadMetadata(metadata: object)`: Updates metadata for a thread.
 ```
