@@ -1,4 +1,3 @@
-/** @type {import("prettier").Config} */
 const config = {
   arrowParens: "always",
   printWidth: 100,
@@ -26,4 +25,4 @@ const config = {
   importOrderCombineTypeAndValueImports: true,
 };
 
-module.exports = config;
+export default config;
