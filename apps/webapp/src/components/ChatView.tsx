@@ -1,17 +1,9 @@
 import React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { api } from "@hyperwave/backend/convex/_generated/api";
-import { useQuery } from "convex/react";
-
-import { ModeToggle } from "./mode-toggle";
 
 // If you use Tailwind in your project, keep these classes. If not, let me know and I will convert to vanilla CSS.
 export function ChatView() {
-  const healthCheck = useQuery(api.healthCheck.get);
-
   return (
     <SidebarProvider>
       <AppSidebar />
