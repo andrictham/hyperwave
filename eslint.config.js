@@ -1,19 +1,9 @@
-import convexPlugin from "@convex-dev/eslint-plugin";
-import eslint from "@eslint/js";
-import pluginRouter from "@tanstack/eslint-plugin-router";
+import js from "@eslint/js";
+import globals from "globals";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config(
-  eslint.configs.recommended,
-  tseslint.configs.recommended,
-  pluginRouter.configs["flat/recommended"],
-  convexPlugin.configs.recommended,
+const config = [
   {
-    files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
-    rules: {
-      "no-unused-vars": "warn",
-      "no-undef": "warn",
-    },
     ignores: [
       "**/node_modules/**",
       "**/dist/**",
@@ -23,4 +13,48 @@ export default tseslint.config(
       "**/convex/_generated/**",
     ],
   },
-);
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
+      },
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+        ecmaVersion: "latest",
+        sourceType: "module",
+      },
+    },
+    rules: {
+      "no-undef": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
+    },
+  },
+  {
+    files: ["**/*.tsx"],
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
+    languageOptions: {
+      globals: {
+        React: "readonly",
+        JSX: "readonly",
+      },
+    },
+  },
+];
+
+export default config;

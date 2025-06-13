@@ -1,6 +1,6 @@
-import { createRouter, RouterProvider } from "@tanstack/react-router";
-import { ConvexReactClient } from "convex/react";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
+import { createRouter, RouterProvider, type ReactNode } from "@tanstack/react-router";
+import { ConvexReactClient } from "convex/react";
 import ReactDOM from "react-dom/client";
 
 import Loader from "./components/loader";
@@ -13,7 +13,7 @@ const router = createRouter({
   defaultPreload: "intent",
   defaultPendingComponent: () => <Loader />,
   context: {},
-  Wrap: function WrapComponent({ children }: { children: React.ReactNode }) {
+  Wrap: function WrapComponent({ children }: { children: ReactNode }) {
     return <ConvexAuthProvider client={convex}>{children}</ConvexAuthProvider>;
   },
 });

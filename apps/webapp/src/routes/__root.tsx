@@ -12,7 +12,8 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 import "../index.css";
 
-export interface RouterAppContext {}
+// Using Record<string, never> to represent an empty object type
+export type RouterAppContext = Record<string, never>;
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
