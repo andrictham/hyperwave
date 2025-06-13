@@ -1,12 +1,15 @@
 import { Link } from "@tanstack/react-router";
+import { api } from "@hyperwave/backend/convex/_generated/api";
 
 import { ModeToggle } from "./mode-toggle";
+import { useQuery } from "convex/react";
 
 export default function Header() {
   const links = [
     { to: "/", label: "Home" },
     { to: "/todos", label: "Todos" },
   ];
+    const healthCheck = useQuery(api.healthCheck.get);
 
   return (
     <div>
@@ -21,6 +24,18 @@ export default function Header() {
           })}
         </nav>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <div
+              className={`h-2 w-2 rounded-full ${healthCheck === "OK" ? "bg-green-5" : healthCheck === undefined ? "bg-orange-5" : "bg-red-5"}`}
+            />
+            <span className="text-sm text-muted-foreground">
+              {healthCheck === undefined
+                ? "Checking..."
+                : healthCheck === "OK"
+                  ? "Connected"
+                  : "Error"}
+            </span>
+          </div>
           <ModeToggle />
         </div>
       </div>
