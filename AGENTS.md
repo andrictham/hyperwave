@@ -1,12 +1,14 @@
 # Hyperwave
 
-- Consule `README.md` in the root of this monorepo for information about how this monorepo is structured and the tech stack used.
+- Consult `README.md` in the root of this monorepo for information about how this monorepo is structured and the tech stack used.
 
 - This project is a monorepo created with Turborepo. Sub-repos of this monorepo can be found in `apps/*` and `packages/*`.
 
 - Guidelines for how to use Convex, which powers the backend of this stack, as well as reactive data queries and mutations on the frontend, can be found in the section below titled “Convex guidelines”.
 
 - Guidelines for how to use the Convex “AI Agent Component” [(@convex-dev/agent)](https://github.com/get-convex/agent) can be found in the section below titled “Convex Agent Component guidelines”.
+
+- Guidelines for how to use the OpenRouter AI SDK Provider, which acts as our AI provider, can be found in the section below titled “OpenRouter AI SDK Provider guidelines”.
 
 - Guidelines for how to use TanStack Router, which powers the frontend routing of this stack, can be found in `./apps/webapp/AGENTS.md`.
 
@@ -1870,4 +1872,189 @@ CODE:
 Agent/Thread Objects:
   - `getThreadMetadata()`: Retrieves metadata associated with a thread.
   - `updateThreadMetadata(metadata: object)`: Updates metadata for a thread.
+```
+
+# OpenRouter AI SDK Provider guidelines
+
+TITLE: Installing OpenRouter AI SDK Provider
+DESCRIPTION: Instructions for adding the OpenRouter AI SDK provider to a project using pnpm, npm, or yarn. This is the first step to integrate OpenRouter models into your application.
+SOURCE: https://github.com/openrouterteam/ai-sdk-provider/blob/main/README.md#_snippet_0
+
+LANGUAGE: bash
+CODE:
+
+```
+# For pnpm
+pnpm add @openrouter/ai-sdk-provider
+
+# For npm
+npm install @openrouter/ai-sdk-provider
+
+# For yarn
+yarn add @openrouter/ai-sdk-provider
+```
+
+---
+
+TITLE: Generating Text with OpenRouter and AI SDK
+DESCRIPTION: Illustrates a basic example of generating text using the `generateText` function from the AI SDK with an OpenRouter model. It shows how to specify an OpenRouter model and provide a prompt for text generation.
+SOURCE: https://github.com/openrouterteam/ai-sdk-provider/blob/main/README.md#_snippet_2
+
+LANGUAGE: typescript
+CODE:
+
+```
+import { openrouter } from '@openrouter/ai-sdk-provider';
+import { generateText } from 'ai';
+
+const { text } = await generateText({
+  model: openrouter('openai/gpt-4o'),
+  prompt: 'Write a vegetarian lasagna recipe for 4 people.',
+});
+```
+
+---
+
+TITLE: Importing OpenRouter Provider Instance
+DESCRIPTION: Demonstrates how to import the default `openrouter` provider instance from the `@openrouter/ai-sdk-provider` package, making it available for use with the Vercel AI SDK.
+SOURCE: https://github.com/openrouterteam/ai-sdk-provider/blob/main/README.md#_snippet_1
+
+LANGUAGE: typescript
+CODE:
+
+```
+import { openrouter } from '@openrouter/ai-sdk-provider';
+```
+
+---
+
+TITLE: Passing Extra Body via providerOptions in AI SDK
+DESCRIPTION: Shows how to pass additional OpenRouter-specific parameters, such as `reasoning.max_tokens`, through the `providerOptions.openrouter` property when streaming text with the AI SDK. This method allows fine-grained control over the model's behavior per request.
+SOURCE: https://github.com/openrouterteam/ai-sdk-provider/blob/main/README.md#_snippet_3
+
+LANGUAGE: typescript
+CODE:
+
+```
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { streamText } from 'ai';
+
+const openrouter = createOpenRouter({ apiKey: 'your-api-key' });
+const model = openrouter('anthropic/claude-3.7-sonnet:thinking');
+await streamText({
+  model,
+  messages: [{ role: 'user', content: 'Hello' }],
+  providerOptions: {
+    openrouter: {
+      reasoning: {
+        max_tokens: 10,
+      },
+    },
+  },
+});
+```
+
+---
+
+TITLE: Passing Extra Body via extraBody in Model Settings
+DESCRIPTION: Demonstrates how to include extra OpenRouter-specific parameters directly within the model settings using the `extraBody` property. This approach configures the model instance with custom options that apply to all subsequent requests made with that specific model.
+SOURCE: https://github.com/openrouterteam/ai-sdk-provider/blob/main/README.md#_snippet_4
+
+LANGUAGE: typescript
+CODE:
+
+```
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { streamText } from 'ai';
+
+const openrouter = createOpenRouter({ apiKey: 'your-api-key' });
+const model = openrouter('anthropic/claude-3.7-sonnet:thinking', {
+  extraBody: {
+    reasoning: {
+      max_tokens: 10,
+    },
+  },
+});
+await streamText({
+  model,
+  messages: [{ role: 'user', content: 'Hello' }],
+});
+```
+
+---
+
+TITLE: Passing Extra Body via extraBody in Model Factory
+DESCRIPTION: Illustrates configuring OpenRouter-specific `extraBody` parameters directly within the `createOpenRouter` factory function. This sets global extra body parameters for all models created by this specific OpenRouter instance.
+SOURCE: https://github.com/openrouterteam/ai-sdk-provider/blob/main/README.md#_snippet_5
+
+LANGUAGE: typescript
+CODE:
+
+```
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { streamText } from 'ai';
+
+const openrouter = createOpenRouter({
+  apiKey: 'your-api-key',
+  extraBody: {
+    reasoning: {
+      max_tokens: 10,
+    },
+  },
+});
+const model = openrouter('anthropic/claude-3.7-sonnet:thinking');
+await streamText({
+  model,
+  messages: [{ role: 'user', content: 'Hello' }],
+});
+```
+
+---
+
+TITLE: Configuring Anthropic Prompt Caching with OpenRouter
+DESCRIPTION: Demonstrates how to apply Anthropic-specific prompt caching options, such as `cacheControl: { type: 'ephemeral' }`, directly within message content when using `streamText`. The OpenRouter provider automatically handles the conversion to the correct internal format.
+SOURCE: https://github.com/openrouterteam/ai-sdk-provider/blob/main/README.md#_snippet_6
+
+LANGUAGE: typescript
+CODE:
+
+```
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
+import { streamText } from 'ai';
+
+const openrouter = createOpenRouter({ apiKey: 'your-api-key' });
+const model = openrouter('anthropic/<supported-caching-model>');
+
+await streamText({
+  model,
+  messages: [
+    {
+      role: 'system',
+      content:
+        'You are a podcast summary assistant. You are detail oriented and critical about the content.',
+    },
+    {
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: 'Given the text body below:',
+        },
+        {
+          type: 'text',
+          text: '<LARGE BODY OF TEXT>',
+          providerOptions: {
+            openrouter: {
+              cacheControl: { type: 'ephemeral' },
+            },
+          },
+        },
+        {
+          type: 'text',
+          text: 'List the speakers?',
+        },
+      ],
+    },
+  ],
+});
 ```
