@@ -1,4 +1,6 @@
 import * as React from "react";
+import logoDark from "@/assets/hyperwave-logo-dark.png";
+import logoLight from "@/assets/hyperwave-logo-light.png";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -73,9 +75,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <div className="flex items-center gap-2">
-                <div className="bg-[#c5420a] text-[#fffdfc] flex items-center justify-center rounded-md w-8 h-8 font-bold text-lg shadow-lg">
-                  H
-                </div>
+                <img src={logoLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
+                <img src={logoDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
                 <span className="font-bold text-xl tracking-wide">Hyperwave</span>
               </div>
             </SidebarMenuButton>
