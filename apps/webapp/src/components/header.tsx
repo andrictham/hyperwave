@@ -9,7 +9,7 @@ export default function Header() {
     { to: "/", label: "Home" },
     { to: "/todos", label: "Todos" },
   ];
-    const healthCheck = useQuery(api.healthCheck.get);
+  const healthCheck = useQuery(api.healthCheck.get);
 
   return (
     <div>

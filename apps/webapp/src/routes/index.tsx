@@ -1,9 +1,9 @@
 
 import { LoginForm } from "@/components/login-form";
+import { ChatView } from "@/components/ChatView";
 import { createFileRoute } from "@tanstack/react-router";
 import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { Button } from "@/components/ui/button";
+
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
@@ -18,8 +18,7 @@ function HomeComponent() {
         <SignInLogin />
       </Unauthenticated>
       <Authenticated>
-        Chat layout here
-        <SignOut />
+        <ChatView />
       </Authenticated>
     </>
   );
@@ -52,9 +51,4 @@ function SignInLogin() {
       </div>
     </div>
   );
-}
-
-  function SignOut() {
-  const { signOut } = useAuthActions();
-  return <Button onClick={() => void signOut()}>Sign out</Button>;
 }
