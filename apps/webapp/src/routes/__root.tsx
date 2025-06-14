@@ -19,11 +19,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       {
-        title: "My App",
+        title: "Hyperwave",
       },
       {
         name: "description",
-        content: "My App is a web application",
+        content: "Hyperwave is an open-source AI chat app built with Convex and TanStack Router.",
       },
     ],
     links: [
@@ -45,7 +45,6 @@ function RootComponent() {
       <HeadContent />
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <div className="grid grid-rows-[auto_1fr] h-svh">
-    
           {isFetching ? <Loader /> : <Outlet />}
         </div>
         <Toaster richColors />
