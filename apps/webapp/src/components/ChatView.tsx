@@ -3,9 +3,14 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
+import {
+  optimisticallySendMessage,
+  toUIMessages,
+  useThreadMessages,
+  type UIMessage,
+} from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
-import { useAction } from "convex/react";
+import { useMutation } from "convex/react";
 import type { FunctionReference } from "convex/server";
 
 import type { ThreadStreamQuery } from "../../../../node_modules/@convex-dev/agent/dist/esm/react/types";
@@ -16,7 +21,7 @@ interface ChatApi {
   };
   chatActions: {
     sendMessage: FunctionReference<
-      "action",
+      "mutation",
       "public",
       { threadId?: string; prompt: string },
       { threadId: string }
@@ -75,7 +80,13 @@ export function ChatView({
     : undefined;
   const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
 
-  const send = useAction(chatApi.chatActions.sendMessage);
+  const send = useMutation(chatApi.chatActions.sendMessage).withOptimisticUpdate((store, args) => {
+    if (!args.threadId) return;
+    optimisticallySendMessage(chatApi.chat.listThreadMessages)(store, {
+      threadId: args.threadId,
+      prompt: args.prompt,
+    });
+  });
 
   const isStreaming = (messagesQuery as { streaming?: boolean } | undefined)?.streaming ?? false;
 
