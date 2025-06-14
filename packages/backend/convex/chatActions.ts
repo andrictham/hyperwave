@@ -6,8 +6,12 @@ import { mutation } from "./_generated/server";
 import agent from "./agent";
 
 /**
- * Save a user's message and schedule asynchronous generation of the assistant's
- * reply. If no threadId is provided a new thread is created.
+ * Save a user's message and schedule asynchronous generation of the
+ * assistant's reply. If no threadId is provided a new thread is created.
+ *
+ * Embeddings are skipped because the agent may not be configured with a text
+ * embedding model. The background action will therefore generate a reply using
+ * only the saved message history.
  */
 export const sendMessage = mutation({
   args: { threadId: v.optional(v.string()), prompt: v.string() },
