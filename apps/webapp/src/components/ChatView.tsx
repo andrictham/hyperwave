@@ -96,7 +96,11 @@ export function ChatView({
             ))}
           </main>
           <form onSubmit={handleSubmit} className="flex gap-2 p-2 border-t">
-            <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} className="flex-1" />
+            <Input
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="flex-1"
+            />
             <Button type="submit" disabled={!prompt.trim() || isStreaming}>
               Send
             </Button>
