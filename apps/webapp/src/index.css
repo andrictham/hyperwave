@@ -378,4 +378,34 @@ body {
   .prose li {
     @apply mt-1;
   }
+  .prose a {
+    @apply underline text-primary transition-colors;
+  }
+  .prose a:hover {
+    @apply text-primary-foreground;
+  }
+  .prose blockquote {
+    @apply border-l-2 pl-4 italic text-muted-foreground my-4;
+  }
+  .prose code {
+    @apply font-mono bg-muted rounded px-1;
+  }
+  .prose pre {
+    @apply bg-muted text-sm rounded-md p-4 overflow-x-auto my-4;
+  }
+  .prose pre code {
+    @apply bg-transparent p-0;
+  }
+  .prose table {
+    @apply w-full table-auto border-collapse my-4;
+  }
+  .prose th {
+    @apply border-b px-2 py-1 text-left font-semibold;
+  }
+  .prose td {
+    @apply border-b px-2 py-1;
+  }
+  .prose hr {
+    @apply my-6 border-t;
+  }
 }
