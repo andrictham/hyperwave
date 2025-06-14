@@ -37,7 +37,7 @@ function hasResult(value: unknown): value is { result: unknown } {
   return typeof value === "object" && value !== null && "result" in value;
 }
 
-function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
+function MessagePart({ part }: { part: UIMessage["parts"][number] }): React.ReactElement | null {
   switch (part.type) {
     case "text": {
       const [visible] = useSmoothText(part.text);
@@ -123,7 +123,7 @@ export function ChatView({
                 <div className="font-semibold capitalize">{m.role}</div>
                 <div className="flex flex-col gap-1">
                   {getDisplayParts(m).map((part: UIMessage["parts"][number], index: number) => (
-                    <div key={index}>{renderPart(part)}</div>
+                    <MessagePart key={index} part={part} />
                   ))}
                 </div>
               </div>
