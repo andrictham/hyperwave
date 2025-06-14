@@ -14,5 +14,6 @@
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "exclude": ["src/routes/todos.tsx", "src/components/header.tsx"]
 }

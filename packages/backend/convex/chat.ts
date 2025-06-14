@@ -35,7 +35,7 @@ export const listThreadMessages = query({
     pageStatus: v.optional(
       v.union(v.literal("SplitRecommended"), v.literal("SplitRequired"), v.null())
     ),
-    streams: v.any(),
+    streams: v.optional(v.any()),
   }),
   handler: async (ctx, { threadId, paginationOpts, streamArgs }) => {
     const paginated = await agent.listMessages(ctx, {
