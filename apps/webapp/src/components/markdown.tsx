@@ -1,7 +1,7 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { getHighlighter, type Highlighter } from "shiki";
+import { getSingletonHighlighter, type Highlighter } from "shiki";
 
 /** Props for the Markdown component. */
 export interface MarkdownProps {
@@ -14,7 +14,7 @@ export function Markdown({ children }: MarkdownProps) {
   const [highlighter, setHighlighter] = React.useState<Highlighter | null>(null);
 
   React.useEffect(() => {
-    void getHighlighter({ theme: "nord" }).then(setHighlighter);
+    void getSingletonHighlighter({ theme: "nord" }).then(setHighlighter);
   }, []);
 
   interface CodeProps {
