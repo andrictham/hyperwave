@@ -1,5 +1,6 @@
 import { Agent } from "@convex-dev/agent";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+
 import { components } from "./_generated/api";
 
 const openrouter = createOpenRouter({
@@ -7,7 +8,7 @@ const openrouter = createOpenRouter({
 });
 
 const supportAgent = new Agent(components.agent, {
-  chat: openrouter.chat("openai/gpt-4o"),
+  chat: openrouter.chat("deepseek/deepseek-r1-0528:free"),
   instructions: "You are a helpful assistant.",
 });
 
