@@ -40,12 +40,14 @@ function hasResult(value: unknown): value is { result: unknown } {
 function MessagePart({ part }: { part: UIMessage["parts"][number] }): React.ReactElement | null {
   switch (part.type) {
     case "text": {
-      const [visible] = useSmoothText(part.text ?? "");
-      return <span>{visible}</span>;
+      const source = part.text ?? "";
+      const [visible] = useSmoothText(source);
+      return source ? <span>{visible}</span> : null;
     }
     case "reasoning": {
-      const [visible] = useSmoothText(part.reasoning ?? "");
-      return <ReasoningCollapsible>{visible}</ReasoningCollapsible>;
+      const source = part.reasoning ?? "";
+      const [visible] = useSmoothText(source);
+      return source ? <ReasoningCollapsible>{visible}</ReasoningCollapsible> : null;
     }
     case "tool-invocation":
       return (
@@ -66,11 +68,27 @@ function MessagePart({ part }: { part: UIMessage["parts"][number] }): React.Reac
   }
 }
 
-function getDisplayParts(message: UIMessage): UIMessage["parts"] {
-  if (message.role !== "assistant") return message.parts;
-  const reasoning = message.parts.filter((p) => p.type === "reasoning");
-  const rest = message.parts.filter((p) => p.type !== "reasoning");
-  return [...reasoning, ...rest];
+interface DisplayPart {
+  part: UIMessage["parts"][number];
+  /**
+   * Stable key derived from the index of the part in the original
+   * `message.parts` array. This avoids remounting components as parts
+   * stream in and we reorder them for display.
+   */
+  key: string;
+}
+
+function getDisplayParts(message: UIMessage): DisplayPart[] {
+  return [
+    // Reasoning first
+    ...message.parts
+      .map((p, idx) => ({ part: p, key: `${idx}-${p.type}` }))
+      .filter(({ part }) => part.type === "reasoning"),
+    // Then all other parts
+    ...message.parts
+      .map((p, idx) => ({ part: p, key: `${idx}-${p.type}` }))
+      .filter(({ part }) => part.type !== "reasoning"),
+  ];
 }
 
 export function ChatView({
@@ -124,8 +142,8 @@ export function ChatView({
               <div key={m.key} className="space-y-1">
                 <div className="font-semibold capitalize">{m.role}</div>
                 <div className="flex flex-col gap-1">
-                  {getDisplayParts(m).map((part: UIMessage["parts"][number], index: number) => (
-                    <MessagePart key={index} part={part} />
+                  {getDisplayParts(m).map(({ part, key }) => (
+                    <MessagePart key={key} part={part} />
                   ))}
                 </div>
               </div>
