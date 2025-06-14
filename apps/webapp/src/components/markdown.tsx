@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 import {
   getSingletonHighlighter,
   type Highlighter,
+  type LanguageInput,
 } from "shiki";
 import nord from "shiki/themes/nord.mjs";
 
@@ -18,7 +19,15 @@ export function Markdown({ children }: MarkdownProps) {
   const [highlighter, setHighlighter] = React.useState<Highlighter | null>(null);
 
   React.useEffect(() => {
-    void getSingletonHighlighter({ themes: [nord] }).then(setHighlighter);
+    const langs: readonly LanguageInput[] = [
+      "javascript",
+      "typescript",
+      "jsx",
+      "tsx",
+      "bash",
+      "json",
+    ];
+    void getSingletonHighlighter({ themes: [nord], langs }).then(setHighlighter);
   }, []);
 
   interface CodeProps {
@@ -35,10 +44,15 @@ export function Markdown({ children }: MarkdownProps) {
         const langMatch = /language-(\w+)/.exec(className || "");
         if (!inline && langMatch && highlighter) {
           const lang = langMatch[1];
+          const loaded = highlighter.getLoadedLanguages();
+          const langToUse = loaded.includes(lang) ? lang : "txt";
           return (
             <div
               dangerouslySetInnerHTML={{
-                __html: highlighter.codeToHtml(code, { lang, theme: "nord" }),
+                __html: highlighter.codeToHtml(code, {
+                  lang: langToUse,
+                  theme: "nord",
+                }),
               }}
             />
           );
