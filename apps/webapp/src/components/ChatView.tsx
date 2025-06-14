@@ -6,6 +6,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   optimisticallySendMessage,
   toUIMessages,
+  useSmoothText,
   useThreadMessages,
   type UIMessage,
 } from "@convex-dev/agent/react";
@@ -38,8 +39,10 @@ function hasResult(value: unknown): value is { result: unknown } {
 
 function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   switch (part.type) {
-    case "text":
-      return <span>{part.text}</span>;
+    case "text": {
+      const [visible] = useSmoothText(part.text);
+      return <span>{visible}</span>;
+    }
     case "reasoning":
       return <ReasoningCollapsible>{part.reasoning}</ReasoningCollapsible>;
     case "tool-invocation":
@@ -59,6 +62,13 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
     default:
       return null;
   }
+}
+
+function getDisplayParts(message: UIMessage): UIMessage["parts"] {
+  if (message.role !== "assistant") return message.parts;
+  const reasoning = message.parts.filter((p) => p.type === "reasoning");
+  const rest = message.parts.filter((p) => p.type !== "reasoning");
+  return [...reasoning, ...rest];
 }
 
 export function ChatView({
@@ -112,7 +122,7 @@ export function ChatView({
               <div key={m.key} className="space-y-1">
                 <div className="font-semibold capitalize">{m.role}</div>
                 <div className="flex flex-col gap-1">
-                  {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                  {getDisplayParts(m).map((part: UIMessage["parts"][number], index: number) => (
                     <div key={index}>{renderPart(part)}</div>
                   ))}
                 </div>

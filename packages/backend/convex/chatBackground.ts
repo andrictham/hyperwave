@@ -16,9 +16,10 @@ export const generateAssistantReply = internalAction({
   args: { threadId: v.string(), promptMessageId: v.string() },
   handler: async (ctx, { threadId, promptMessageId }) => {
     const { thread } = await agent.continueThread(ctx, { threadId });
-    await thread.generateText(
+    const result = await thread.streamText(
       { promptMessageId },
       {
+        saveStreamDeltas: true,
         providerOptions: {
           openrouter: {
             reasoning: {
@@ -31,5 +32,6 @@ export const generateAssistantReply = internalAction({
         },
       },
     );
+    await result.consumeStream();
   },
 });
