@@ -12,6 +12,7 @@ import type * as agent from "../agent.js";
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
 import type * as chatActions from "../chatActions.js";
+import type * as chatBackground from "../chatBackground.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as todos from "../todos.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   chat: typeof chat;
   chatActions: typeof chatActions;
+  chatBackground: typeof chatBackground;
   healthCheck: typeof healthCheck;
   http: typeof http;
   todos: typeof todos;
