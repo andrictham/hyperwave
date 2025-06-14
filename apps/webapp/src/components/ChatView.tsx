@@ -58,7 +58,7 @@ export function ChatView({
     : undefined;
   const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
 
-  const send = useMutation(api.chat.sendMessage).withOptimisticUpdate((store, args) => {
+  const send = useMutation(api.chatActions.sendMessage).withOptimisticUpdate((store, args) => {
     optimisticallySendMessage(api.chat.listThreadMessages)(store, {
       threadId: args.threadId ?? "new",
       prompt: args.prompt,
