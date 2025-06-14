@@ -86,6 +86,7 @@ export function ChatView({
   const modelsConfig = useQuery(chatApi.models.listModels);
   const modelsLoaded = modelsConfig !== undefined;
   const [model, setModel] = useState<string>();
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
   useEffect(() => {
     if (modelsConfig && !model) {
       setModel(modelsConfig.defaultModel);
@@ -136,7 +137,7 @@ export function ChatView({
             ))}
           </main>
           <form onSubmit={handleSubmit} className="flex gap-2 p-2 border-t">
-            <Popover>
+            <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
               <PopoverTrigger asChild>
                 <Button type="button" variant="outline" disabled={!modelsLoaded}>
                   {modelsLoaded ? model : "Loading..."}
@@ -148,7 +149,10 @@ export function ChatView({
                     <button
                       key={m}
                       type="button"
-                      onClick={() => setModel(m)}
+                      onClick={() => {
+                        setModel(m);
+                        setModelMenuOpen(false);
+                      }}
                       className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
                     >
                       {m}
