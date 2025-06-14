@@ -1,8 +1,9 @@
+"use node";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { vStreamArgs } from "@convex-dev/agent";
 import { components } from "./_generated/api";
-import { mutation, query } from "./_generated/server";
+import { action, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import agent from "./agent";
 
@@ -33,7 +34,7 @@ export const listThreadMessages = query({
   },
 });
 
-export const sendMessage = mutation({
+export const sendMessage = action({
   args: { threadId: v.optional(v.string()), prompt: v.string() },
   handler: async (ctx, { threadId, prompt }) => {
     const userId = await getAuthUserId(ctx);
