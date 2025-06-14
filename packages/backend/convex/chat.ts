@@ -3,16 +3,16 @@ import { v } from "convex/values";
 import { vStreamArgs } from "@convex-dev/agent";
 import { components } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
-import { auth } from "./auth";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import agent from "./agent";
 
 export const listThreads = query({
   args: {},
   handler: async (ctx) => {
-    const user = await auth.getUser(ctx);
-    if (!user) return [];
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return [];
     const result = await ctx.runQuery(components.agent.threads.listThreadsByUserId, {
-      userId: user.subject,
+      userId,
       order: "desc",
       paginationOpts: { cursor: null, numItems: 50 },
     });
@@ -36,11 +36,11 @@ export const listThreadMessages = query({
 export const sendMessage = mutation({
   args: { threadId: v.optional(v.string()), prompt: v.string() },
   handler: async (ctx, { threadId, prompt }) => {
-    const user = await auth.getUser(ctx);
-    if (!user) throw new Error("Not authenticated");
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) throw new Error("Not authenticated");
     let useThreadId = threadId;
     if (!useThreadId) {
-      const created = await agent.createThread(ctx, { userId: user.subject });
+      const created = await agent.createThread(ctx, { userId });
       useThreadId = created.threadId;
     }
     const { thread } = await agent.continueThread(ctx, { threadId: useThreadId });
