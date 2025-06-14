@@ -357,3 +357,25 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .prose p {
+    @apply my-2 leading-relaxed;
+  }
+  .prose h1 {
+    @apply mt-6 mb-2 text-2xl font-semibold;
+  }
+  .prose h2 {
+    @apply mt-5 mb-2 text-xl font-semibold;
+  }
+  .prose h3 {
+    @apply mt-4 mb-2 text-lg font-semibold;
+  }
+  .prose ul,
+  .prose ol {
+    @apply list-disc list-inside my-3 ml-6;
+  }
+  .prose li {
+    @apply mt-1;
+  }
+}

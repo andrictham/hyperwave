@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Markdown } from "@/components/markdown";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { useAction } from "convex/react";
@@ -33,7 +34,7 @@ function hasResult(value: unknown): value is { result: unknown } {
 function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   switch (part.type) {
     case "text":
-      return <span>{part.text}</span>;
+      return <Markdown>{part.text}</Markdown>;
     case "reasoning":
       return <pre className="text-xs opacity-70 whitespace-pre-wrap">{part.reasoning}</pre>;
     case "tool-invocation":
