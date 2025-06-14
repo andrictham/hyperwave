@@ -23,11 +23,6 @@ import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Chats",
@@ -67,6 +62,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const healthCheck = useQuery(api.healthCheck.get);
+  const user = useQuery(api.auth.me);
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -121,7 +117,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </NavSecondary>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {user && (
+          <NavUser
+            user={{
+              name: user.name ?? "",
+              email: user.email ?? "",
+              avatar: user.image ?? "",
+            }}
+          />
+        )}
       </SidebarFooter>
     </Sidebar>
   );
