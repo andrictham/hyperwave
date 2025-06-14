@@ -16,6 +16,13 @@ export const generateAssistantReply = internalAction({
   args: { threadId: v.string(), promptMessageId: v.string() },
   handler: async (ctx, { threadId, promptMessageId }) => {
     const { thread } = await agent.continueThread(ctx, { threadId });
-    await thread.generateText({ promptMessageId });
+    await thread.generateText(
+      { promptMessageId },
+      {
+        contextOptions: {
+          searchOptions: { textSearch: true, vectorSearch: false },
+        },
+      },
+    );
   },
 });
