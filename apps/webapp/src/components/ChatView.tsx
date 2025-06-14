@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Markdown } from "@/components/markdown";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import type { FunctionReference } from "convex/server";
 
 import type { ThreadStreamQuery } from "../../../../node_modules/@convex-dev/agent/dist/esm/react/types";
@@ -15,11 +16,19 @@ interface ChatApi {
   chat: {
     listThreadMessages: ThreadStreamQuery;
   };
+  models: {
+    listModels: FunctionReference<
+      "query",
+      "public",
+      {},
+      { defaultModel: string; models: string[] }
+    >;
+  };
   chatActions: {
     sendMessage: FunctionReference<
       "action",
       "public",
-      { threadId?: string; prompt: string },
+      { threadId?: string; prompt: string; model?: string },
       { threadId: string }
     >;
   };
@@ -64,6 +73,13 @@ export function ChatView({
   onNewThread?: (id: string) => void;
 }) {
   const [prompt, setPrompt] = useState("");
+  const modelsConfig = useQuery(chatApi.models.listModels);
+  const [model, setModel] = useState<string>();
+  useEffect(() => {
+    if (modelsConfig && !model) {
+      setModel(modelsConfig.defaultModel);
+    }
+  }, [modelsConfig, model]);
   const messagesQuery = threadId
     ? useThreadMessages(
         chatApi.chat.listThreadMessages,
@@ -84,7 +100,7 @@ export function ChatView({
     e.preventDefault();
     const text = prompt.trim();
     if (!text) return;
-    const result = await send({ threadId, prompt: text });
+    const result = await send({ threadId, prompt: text, model });
     setPrompt("");
     if (!threadId && onNewThread && result.threadId) {
       onNewThread(result.threadId);
@@ -109,6 +125,27 @@ export function ChatView({
             ))}
           </main>
           <form onSubmit={handleSubmit} className="flex gap-2 p-2 border-t">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline">
+                  {model ?? "Model"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0">
+                <div className="flex flex-col">
+                  {modelsConfig?.models.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setModel(m)}
+                      className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} className="flex-1" />
             <Button type="submit" disabled={!prompt.trim() || isStreaming}>
               Send
