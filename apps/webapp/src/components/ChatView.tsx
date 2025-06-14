@@ -40,11 +40,13 @@ function hasResult(value: unknown): value is { result: unknown } {
 function MessagePart({ part }: { part: UIMessage["parts"][number] }): React.ReactElement | null {
   switch (part.type) {
     case "text": {
-      const [visible] = useSmoothText(part.text);
+      const [visible] = useSmoothText(part.text ?? "");
       return <span>{visible}</span>;
     }
-    case "reasoning":
-      return <ReasoningCollapsible>{part.reasoning}</ReasoningCollapsible>;
+    case "reasoning": {
+      const [visible] = useSmoothText(part.reasoning ?? "");
+      return <ReasoningCollapsible>{visible}</ReasoningCollapsible>;
+    }
     case "tool-invocation":
       return (
         <div className="text-xs border rounded p-2 bg-muted">
