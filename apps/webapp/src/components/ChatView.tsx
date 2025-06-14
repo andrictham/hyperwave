@@ -9,8 +9,9 @@ export function ChatView() {
       <AppSidebar />
       <SidebarInset>
         {/* Top Bar */}
-        <header className="h-[60px] flex items-center px-8 backdrop-blur-md sticky top-0 z-10">
+        <header className="h-[60px] flex items-center px-4 md:px-8 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-4">
+            <SidebarTrigger className="-ml-1" />
             <div className="bg-[#c5420a] text-[#fffdfc] flex items-center justify-center rounded-md w-8 h-8 font-bold text-lg shadow-lg">
               H
             </div>
