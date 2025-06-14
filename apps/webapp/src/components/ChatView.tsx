@@ -37,7 +37,7 @@ interface ChatApi {
   };
 }
 
-const chatApi = api as unknown as ChatApi;
+const chatApi: ChatApi = api;
 
 /** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {

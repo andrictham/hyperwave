@@ -2,11 +2,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {
-  getSingletonHighlighter,
-  type Highlighter,
-  type LanguageInput,
-} from "shiki";
+import { getSingletonHighlighter, type Highlighter } from "shiki";
 import nord from "shiki/themes/nord.mjs";
 
 /** Props for the Markdown component. */
@@ -35,7 +31,7 @@ export function Markdown({ children }: MarkdownProps) {
       "kotlin",
       "c",
       "cpp",
-    ] as unknown as LanguageInput[];
+    ];
     void getSingletonHighlighter({ themes: [nord], langs }).then(setHighlighter);
   }, []);
 
