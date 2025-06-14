@@ -1,6 +1,6 @@
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import { vStreamArgs } from "@convex-dev/agent/react";
+import { vStreamArgs } from "@convex-dev/agent";
 import { components } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
