@@ -19,6 +19,13 @@ export const generateAssistantReply = internalAction({
     await thread.generateText(
       { promptMessageId },
       {
+        providerOptions: {
+          openrouter: {
+            reasoning: {
+              max_tokens: 256,
+            },
+          },
+        },
         contextOptions: {
           searchOptions: { textSearch: true, vectorSearch: false },
         },

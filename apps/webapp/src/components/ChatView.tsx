@@ -14,6 +14,7 @@ import { useMutation } from "convex/react";
 import type { FunctionReference } from "convex/server";
 
 import type { ThreadStreamQuery } from "../../../../node_modules/@convex-dev/agent/dist/esm/react/types";
+import { ReasoningCollapsible } from "./reasoning-collapsible";
 
 interface ChatApi {
   chat: {
@@ -40,7 +41,7 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
     case "text":
       return <span>{part.text}</span>;
     case "reasoning":
-      return <pre className="text-xs opacity-70 whitespace-pre-wrap">{part.reasoning}</pre>;
+      return <ReasoningCollapsible>{part.reasoning}</ReasoningCollapsible>;
     case "tool-invocation":
       return (
         <div className="text-xs border rounded p-2 bg-muted">
