@@ -1,7 +1,10 @@
-'use node';
-import { action } from "./_generated/server";
-import { v } from "convex/values";
+"use node";
+
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { v } from "convex/values";
+
+import { components } from "./_generated/api";
+import { action } from "./_generated/server";
 import agent from "./agent";
 
 export const sendMessage = action({
@@ -20,5 +23,24 @@ export const sendMessage = action({
     const { thread } = await agent.continueThread(ctx, { threadId: useThreadId });
     await thread.generateText({ prompt });
     return { threadId: useThreadId };
+  },
+});
+
+export const deleteThread = action({
+  args: { threadId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, { threadId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+    const thread = await ctx.runQuery(components.agent.threads.getThread, { threadId });
+    if (thread === null || thread.userId !== userId) {
+      throw new Error("Thread not found");
+    }
+    await ctx.runAction(components.agent.threads.deleteAllForThreadIdSync, {
+      threadId,
+    });
+    return null;
   },
 });

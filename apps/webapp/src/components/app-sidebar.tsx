@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/sidebar";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
+import { Trash2 } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
@@ -26,6 +27,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const healthCheck = useQuery(api.healthCheck?.get);
   const threads = useQuery(api.chat.listThreads) ?? [];
   const user = useQuery(api.auth.me);
+  const deleteThread = useAction(api.chatActions.deleteThread);
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -61,12 +63,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupContent>
             <SidebarMenu>
               {threads.map((t: { _id: string; title?: string | null }) => (
-                <SidebarMenuItem key={t._id}>
-                  <SidebarMenuButton asChild>
+                <SidebarMenuItem key={t._id} className="flex items-center">
+                  <SidebarMenuButton asChild className="flex-1 truncate">
                     <Link to="/chat/$threadId" params={{ threadId: t._id }} className="truncate">
                       {t.title ?? "Untitled"}
                     </Link>
                   </SidebarMenuButton>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteThread({ threadId: t._id })}
+                    aria-label="Delete thread"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
