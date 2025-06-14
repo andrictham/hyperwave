@@ -40,14 +40,16 @@ function hasResult(value: unknown): value is { result: unknown } {
 function MessagePart({ part }: { part: UIMessage["parts"][number] }): React.ReactElement | null {
   switch (part.type) {
     case "text": {
-      const source = part.text ?? "";
+      const source = typeof part.text === "string" ? part.text : "";
+      if (!source) return null;
       const [visible] = useSmoothText(source);
-      return source ? <span>{visible}</span> : null;
+      return <span>{visible}</span>;
     }
     case "reasoning": {
-      const source = part.reasoning ?? "";
+      const source = typeof part.reasoning === "string" ? part.reasoning : "";
+      if (!source) return null;
       const [visible] = useSmoothText(source);
-      return source ? <ReasoningCollapsible>{visible}</ReasoningCollapsible> : null;
+      return <ReasoningCollapsible>{visible}</ReasoningCollapsible>;
     }
     case "tool-invocation":
       return (
