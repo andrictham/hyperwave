@@ -8,10 +8,19 @@ import { action } from "./_generated/server";
 import agent, { openrouter } from "./agent";
 import { allowedModels, defaultModel } from "./models";
 
+/**
+ * Type guard ensuring a value is part of the `allowedModels` whitelist.
+ */
 function isAllowedModel(value: string): value is (typeof allowedModels)[number] {
   return allowedModels.includes(value as (typeof allowedModels)[number]);
 }
 
+/**
+ * Action used by the client to send a prompt to a given thread. If no thread
+ * ID is provided, a new thread will be created for the authenticated user.
+ * Optionally accepts a specific model ID. Any invalid model IDs are ignored and
+ * the server's default model is used instead.
+ */
 export const sendMessage = action({
   args: {
     threadId: v.optional(v.string()),
@@ -38,6 +47,10 @@ export const sendMessage = action({
   },
 });
 
+/**
+ * Remove a thread and all of its messages. Only the owning user is allowed to
+ * perform this action.
+ */
 export const deleteThread = action({
   args: { threadId: v.string() },
   returns: v.null(),

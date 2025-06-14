@@ -1,5 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   getSingletonHighlighter,
@@ -19,7 +20,7 @@ export function Markdown({ children }: MarkdownProps) {
   const [highlighter, setHighlighter] = React.useState<Highlighter | null>(null);
 
   React.useEffect(() => {
-    const langs: readonly LanguageInput[] = [
+    const langs = [
       "javascript",
       "typescript",
       "jsx",
@@ -34,7 +35,7 @@ export function Markdown({ children }: MarkdownProps) {
       "kotlin",
       "c",
       "cpp",
-    ];
+    ] as unknown as LanguageInput[];
     void getSingletonHighlighter({ themes: [nord], langs }).then(setHighlighter);
   }, []);
 
@@ -42,10 +43,10 @@ export function Markdown({ children }: MarkdownProps) {
     node?: unknown;
     inline?: boolean;
     className?: string;
-    children?: React.ReactNode[];
+    children?: React.ReactNode;
   }
 
-  const components = React.useMemo(() => {
+  const components = React.useMemo<Components>(() => {
     return {
       code({ node: _node, inline, className, children: codeChildren }: CodeProps) {
         const code = String(codeChildren ?? "").replace(/\n$/, "");

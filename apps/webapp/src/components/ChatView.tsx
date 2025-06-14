@@ -12,6 +12,9 @@ import type { FunctionReference } from "convex/server";
 
 import type { ThreadStreamQuery } from "../../../../node_modules/@convex-dev/agent/dist/esm/react/types";
 
+/**
+ * Filtered subset of the Convex generated API used by this component.
+ */
 interface ChatApi {
   chat: {
     listThreadMessages: ThreadStreamQuery;
@@ -20,7 +23,7 @@ interface ChatApi {
     listModels: FunctionReference<
       "query",
       "public",
-      {},
+      Record<never, never>,
       { defaultModel: string; models: string[] }
     >;
   };
@@ -36,10 +39,12 @@ interface ChatApi {
 
 const chatApi = api as unknown as ChatApi;
 
+/** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {
   return typeof value === "object" && value !== null && "result" in value;
 }
 
+/** Render a single message part based on its type. */
 function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   switch (part.type) {
     case "text":
@@ -65,6 +70,11 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   }
 }
 
+/**
+ * Primary chat view showing the list of messages for a thread and a form to
+ * compose new messages. A model can be selected per message via a popover
+ * menu.
+ */
 export function ChatView({
   threadId,
   onNewThread,
@@ -74,6 +84,7 @@ export function ChatView({
 }) {
   const [prompt, setPrompt] = useState("");
   const modelsConfig = useQuery(chatApi.models.listModels);
+  const modelsLoaded = modelsConfig !== undefined;
   const [model, setModel] = useState<string>();
   useEffect(() => {
     if (modelsConfig && !model) {
@@ -99,7 +110,7 @@ export function ChatView({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
-    if (!text) return;
+    if (!text || !modelsLoaded || !model) return;
     const result = await send({ threadId, prompt: text, model });
     setPrompt("");
     if (!threadId && onNewThread && result.threadId) {
@@ -127,8 +138,8 @@ export function ChatView({
           <form onSubmit={handleSubmit} className="flex gap-2 p-2 border-t">
             <Popover>
               <PopoverTrigger asChild>
-                <Button type="button" variant="outline">
-                  {model ?? "Model"}
+                <Button type="button" variant="outline" disabled={!modelsLoaded}>
+                  {modelsLoaded ? model : "Loading..."}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-0">
@@ -147,7 +158,7 @@ export function ChatView({
               </PopoverContent>
             </Popover>
             <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} className="flex-1" />
-            <Button type="submit" disabled={!prompt.trim() || isStreaming}>
+            <Button type="submit" disabled={!modelsLoaded || !prompt.trim() || isStreaming}>
               Send
             </Button>
           </form>
