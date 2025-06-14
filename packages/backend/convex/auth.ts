@@ -1,5 +1,6 @@
 import GitHub from "@auth/core/providers/github";
 import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
+
 import { query } from "./_generated/server";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({

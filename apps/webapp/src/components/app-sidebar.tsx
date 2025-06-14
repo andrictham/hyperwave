@@ -16,52 +16,15 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { api } from "@hyperwave/backend/convex/_generated/api";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
-import { Frame, LifeBuoy, Map, PieChart, Send } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
 
-const data = {
-  navMain: [
-    {
-      title: "Chats",
-      url: "#",
-      items: [
-        {
-          title: "Cat qubits explained",
-          url: "#",
-          isActive: true,
-        },
-        {
-          title: "Metaphor for resurfacing memories something something",
-          url: "#",
-          isActive: false,
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-};
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const healthCheck = useQuery(api.healthCheck.get);
+  const healthCheck = useQuery(api.healthCheck?.get);
+  const threads = useQuery(api.chat.listThreads) ?? [];
   const user = useQuery(api.auth.me);
 
   return (
@@ -93,27 +56,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={item.isActive}>
-                      <a href={item.url} className="truncate">
-                        {item.title}
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        <SidebarGroup>
+          <SidebarGroupLabel>Chats</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {threads.map((t: { _id: string; title?: string | null }) => (
+                <SidebarMenuItem key={t._id}>
+                  <SidebarMenuButton asChild>
+                    <Link to="/chat/$threadId" params={{ threadId: t._id }} className="truncate">
+                      {t.title ?? "Untitled"}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
         <NavSecondary className="mt-auto">
-          <Button>New Chat</Button>
+          <Link to="/chat/new">
+            <Button>New Chat</Button>
+          </Link>
         </NavSecondary>
       </SidebarContent>
       <SidebarFooter>

@@ -2,6 +2,7 @@
 import { LoginForm } from "@/components/login-form";
 import { ChatView } from "@/components/ChatView";
 import { createFileRoute } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
 
 
@@ -10,15 +11,15 @@ export const Route = createFileRoute("/")({
 });
 
 function HomeComponent() {
-
+  const navigate = useNavigate();
   return (
-   <>
+    <>
       <AuthLoading>Loading indicator here</AuthLoading>
       <Unauthenticated>
         <SignInLogin />
       </Unauthenticated>
       <Authenticated>
-        <ChatView />
+        <ChatView onNewThread={(id) => navigate({ to: "/chat/$threadId", params: { threadId: id } })} />
       </Authenticated>
     </>
   );
