@@ -26,6 +26,14 @@ export function Markdown({ children }: MarkdownProps) {
       "tsx",
       "bash",
       "json",
+      "css",
+      "scss",
+      "python",
+      "rust",
+      "go",
+      "kotlin",
+      "c",
+      "cpp",
     ];
     void getSingletonHighlighter({ themes: [nord], langs }).then(setHighlighter);
   }, []);
@@ -63,7 +71,11 @@ export function Markdown({ children }: MarkdownProps) {
   }, [highlighter]);
 
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={components}
+      className="prose dark:prose-invert max-w-none"
+    >
       {children}
     </ReactMarkdown>
   );
