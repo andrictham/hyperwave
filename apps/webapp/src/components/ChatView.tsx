@@ -81,16 +81,32 @@ interface DisplayPart {
 }
 
 function getDisplayParts(message: UIMessage): DisplayPart[] {
-  return [
-    // Reasoning first
-    ...message.parts
-      .map((p, idx) => ({ part: p, key: `${idx}-${p.type}` }))
-      .filter(({ part }) => part.type === "reasoning"),
-    // Then all other parts
-    ...message.parts
-      .map((p, idx) => ({ part: p, key: `${idx}-${p.type}` }))
-      .filter(({ part }) => part.type !== "reasoning"),
-  ];
+  const reasoning = message.parts
+    .filter((p) => p.type === "reasoning")
+    .map((p) => (typeof p.reasoning === "string" ? p.reasoning : ""))
+    .join("");
+  const text = message.parts
+    .filter((p) => p.type === "text")
+    .map((p) => (typeof p.text === "string" ? p.text : ""))
+    .join("");
+  const others = message.parts.filter((p) => p.type !== "reasoning" && p.type !== "text");
+
+  const parts: DisplayPart[] = [];
+  if (reasoning) {
+    const part: UIMessage["parts"][number] = {
+      type: "reasoning",
+      reasoning,
+    };
+    parts.push({ key: "reasoning", part });
+  }
+  if (text) {
+    const part: UIMessage["parts"][number] = { type: "text", text };
+    parts.push({ key: "text", part });
+  }
+  others.forEach((p, idx) => {
+    parts.push({ part: p, key: `${idx}-${p.type}` });
+  });
+  return parts;
 }
 
 export function ChatView({
