@@ -1,7 +1,7 @@
 "use node";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import { vStreamArgs } from "@convex-dev/agent";
+import { vStreamArgs, vThreadDoc, vMessageDoc } from "@convex-dev/agent";
 import { components } from "./_generated/api";
 import { action, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
@@ -9,6 +9,7 @@ import agent from "./agent";
 
 export const listThreads = query({
   args: {},
+  returns: v.array(vThreadDoc),
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) return [];
@@ -27,8 +28,21 @@ export const listThreadMessages = query({
     paginationOpts: paginationOptsValidator,
     streamArgs: vStreamArgs,
   },
+  returns: v.object({
+    page: v.array(vMessageDoc),
+    continueCursor: v.string(),
+    isDone: v.boolean(),
+    splitCursor: v.optional(v.union(v.string(), v.null())),
+    pageStatus: v.optional(
+      v.union(v.literal("SplitRecommended"), v.literal("SplitRequired"), v.null())
+    ),
+    streams: v.any(),
+  }),
   handler: async (ctx, { threadId, paginationOpts, streamArgs }) => {
-    const paginated = await agent.listMessages(ctx, { threadId, paginationOpts });
+    const paginated = await agent.listMessages(ctx, {
+      threadId,
+      paginationOpts,
+    });
     const streams = await agent.syncStreams(ctx, { threadId, streamArgs });
     return { ...paginated, streams };
   },
@@ -36,6 +50,7 @@ export const listThreadMessages = query({
 
 export const sendMessage = action({
   args: { threadId: v.optional(v.string()), prompt: v.string() },
+  returns: v.object({ threadId: v.string() }),
   handler: async (ctx, { threadId, prompt }) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) throw new Error("Not authenticated");

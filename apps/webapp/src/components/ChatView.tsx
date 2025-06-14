@@ -88,8 +88,8 @@ export function ChatView({
               <div key={m.key} className="space-y-1">
                 <div className="font-semibold capitalize">{m.role}</div>
                 <div className="flex flex-col gap-1">
-                  {m.parts.map((p, i) => (
-                    <div key={i}>{renderPart(p)}</div>
+                  {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                    <div key={index}>{renderPart(part)}</div>
                   ))}
                 </div>
               </div>
