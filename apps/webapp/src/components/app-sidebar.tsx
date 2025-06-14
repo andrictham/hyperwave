@@ -16,8 +16,28 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { api } from "@hyperwave/backend/convex/_generated/api";
-const chatApi = api as any;
 import { useQuery } from "convex/react";
+import type { FunctionReference } from "convex/server";
+import type { ThreadDoc } from "@convex-dev/agent";
+
+interface SidebarApi {
+  healthCheck: {
+    get: FunctionReference<"query", "public", Record<never, never>, string>;
+  };
+  chat: {
+    listThreads: FunctionReference<"query", "public", Record<never, never>, ThreadDoc[]>;
+  };
+  auth: {
+    me: FunctionReference<
+      "query",
+      "public",
+      Record<never, never>,
+      { name?: string; email?: string; image?: string } | null
+    >;
+  };
+}
+
+const chatApi = api as unknown as SidebarApi;
 import { Link } from "@tanstack/react-router";
 
 import { ModeToggle } from "./mode-toggle";

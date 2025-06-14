@@ -3,11 +3,31 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
+import {
+  toUIMessages,
+  useThreadMessages,
+  type UIMessage,
+} from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { useAction } from "convex/react";
+import type { FunctionReference } from "convex/server";
+import type { ThreadStreamQuery } from "../../../../node_modules/@convex-dev/agent/dist/esm/react/types";
 
-const chatApi = api as any;
+interface ChatApi {
+  chat: {
+    listThreadMessages: ThreadStreamQuery;
+  };
+  chatActions: {
+    sendMessage: FunctionReference<
+      "action",
+      "public",
+      { threadId?: string; prompt: string },
+      { threadId: string }
+    >;
+  };
+}
+
+const chatApi = api as unknown as ChatApi;
 
 function hasResult(value: unknown): value is { result: unknown } {
   return typeof value === "object" && value !== null && "result" in value;
@@ -47,17 +67,19 @@ export function ChatView({
 }) {
   const [prompt, setPrompt] = useState("");
   const messagesQuery = threadId
-    ? (useThreadMessages(
-        chatApi.chat.listThreadMessages,
-        { threadId },
-        { initialNumItems: 20, stream: true },
-      ) as any)
+    ? useThreadMessages(chatApi.chat.listThreadMessages, { threadId }, {
+        initialNumItems: 20,
+        stream: true,
+      })
     : undefined;
-  const messageList: UIMessage[] = messagesQuery ? toUIMessages((messagesQuery as any).results ?? []) : [];
+  const messageList: UIMessage[] = messagesQuery
+    ? toUIMessages(messagesQuery.results ?? [])
+    : [];
 
   const send = useAction(chatApi.chatActions.sendMessage);
 
-  const isStreaming = (messagesQuery as any)?.streaming ?? false;
+  const isStreaming =
+    (messagesQuery as { streaming?: boolean } | undefined)?.streaming ?? false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
