@@ -16,6 +16,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { api } from "@hyperwave/backend/convex/_generated/api";
+const chatApi = api as any;
 import { useQuery } from "convex/react";
 import { Link } from "@tanstack/react-router";
 
@@ -23,9 +24,9 @@ import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const healthCheck = useQuery(api.healthCheck.get);
-  const threads = useQuery(api.chat.listThreads) ?? [];
-  const user = useQuery(api.auth.me);
+  const healthCheck = useQuery(chatApi.healthCheck?.get);
+  const threads = useQuery(chatApi.chat.listThreads) ?? [];
+  const user = useQuery(chatApi.auth?.me);
 
   return (
     <Sidebar variant="inset" {...props}>

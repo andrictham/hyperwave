@@ -3,14 +3,11 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import {
-  optimisticallySendMessage,
-  toUIMessages,
-  useThreadMessages,
-  type UIMessage,
-} from "@convex-dev/agent/react";
+import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { useAction } from "convex/react";
+
+const chatApi = api as any;
 
 function hasResult(value: unknown): value is { result: unknown } {
   return typeof value === "object" && value !== null && "result" in value;
@@ -50,22 +47,17 @@ export function ChatView({
 }) {
   const [prompt, setPrompt] = useState("");
   const messagesQuery = threadId
-    ? useThreadMessages(
-        api.chat.listThreadMessages,
+    ? (useThreadMessages(
+        chatApi.chat.listThreadMessages,
         { threadId },
         { initialNumItems: 20, stream: true },
-      )
+      ) as any)
     : undefined;
-  const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
+  const messageList: UIMessage[] = messagesQuery ? toUIMessages((messagesQuery as any).results ?? []) : [];
 
-  const send = useMutation(api.chatActions.sendMessage).withOptimisticUpdate((store, args) => {
-    optimisticallySendMessage(api.chat.listThreadMessages)(store, {
-      threadId: args.threadId ?? "new",
-      prompt: args.prompt,
-    });
-  });
+  const send = useAction(chatApi.chatActions.sendMessage);
 
-  const isStreaming = messagesQuery?.streaming ?? false;
+  const isStreaming = (messagesQuery as any)?.streaming ?? false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
