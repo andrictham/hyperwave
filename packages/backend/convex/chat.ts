@@ -3,15 +3,14 @@ import { v } from "convex/values";
 import { vStreamArgs, vThreadDoc, vMessageDoc } from "@convex-dev/agent";
 import { components } from "./_generated/api";
 import { query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireOwnThread, requireUserId } from "./threadOwnership";
 import agent from "./agent";
 
 export const listThreads = query({
   args: {},
   returns: v.array(vThreadDoc),
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) return [];
+    const userId = await requireUserId(ctx);
     const result = await ctx.runQuery(components.agent.threads.listThreadsByUserId, {
       userId,
       order: "desc",
@@ -38,6 +37,7 @@ export const listThreadMessages = query({
     streams: v.optional(v.any()),
   }),
   handler: async (ctx, { threadId, paginationOpts, streamArgs }) => {
+    await requireOwnThread(ctx, threadId);
     const paginated = await agent.listMessages(ctx, {
       threadId,
       paginationOpts,

@@ -1,19 +1,19 @@
 "use node";
 
-import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 import { components } from "./_generated/api";
 import { action } from "./_generated/server";
 import agent from "./agent";
+import { requireOwnThread, requireUserId } from "./threadOwnership";
 
 export const sendMessage = action({
   args: { threadId: v.optional(v.string()), prompt: v.string() },
   returns: v.object({ threadId: v.string() }),
   handler: async (ctx, { threadId, prompt }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not authenticated");
+    const userId = await requireUserId(ctx);
+    if (threadId) {
+      await requireOwnThread(ctx, threadId);
     }
     let useThreadId = threadId;
     if (!useThreadId) {
@@ -30,14 +30,7 @@ export const deleteThread = action({
   args: { threadId: v.string() },
   returns: v.null(),
   handler: async (ctx, { threadId }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not authenticated");
-    }
-    const thread = await ctx.runQuery(components.agent.threads.getThread, { threadId });
-    if (thread === null || thread.userId !== userId) {
-      throw new Error("Thread not found");
-    }
+    await requireOwnThread(ctx, threadId);
     await ctx.runAction(components.agent.threads.deleteAllForThreadIdSync, {
       threadId,
     });
