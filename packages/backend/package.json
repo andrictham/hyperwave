@@ -3,18 +3,25 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "convex dev",
-    "setup": "convex dev --configure --until-success"
+    "setup": "convex dev --configure --until-success",
+    "test": "vitest",
+    "test:once": "vitest run",
+    "test:debug": "vitest --inspect-brk --no-file-parallelism",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "@edge-runtime/vm": "^5.0.0",
+    "convex-test": "^0.0.37",
+    "typescript": "^5.8.3",
+    "vitest": "^1.6.1"
   },
   "dependencies": {
     "@auth/core": "0.37.0",
-    "@convex-dev/auth": "^0.0.87",
     "@convex-dev/agent": "^0.1.7",
+    "@convex-dev/auth": "^0.0.87",
     "@openrouter/ai-sdk-provider": "^0.7.2",
     "convex": "^1.24.8"
   }

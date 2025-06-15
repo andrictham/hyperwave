@@ -1,12 +1,12 @@
 "use node";
 
-import { getAuthUserId } from "@convex-dev/auth/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { components } from "./_generated/api";
 import { action } from "./_generated/server";
 import agent, { openrouter } from "./agent";
 import { allowedModels, defaultModel } from "./models";
+import { requireOwnThread, requireUserId } from "./threadOwnership";
 
 /**
  * Type guard ensuring a value is part of the `allowedModels` whitelist.
@@ -29,9 +29,9 @@ export const sendMessage = action({
   },
   returns: v.object({ threadId: v.string() }),
   handler: async (ctx, { threadId, prompt, model }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not authenticated");
+    const userId = await requireUserId(ctx);
+    if (threadId) {
+      await requireOwnThread(ctx, threadId);
     }
     let useThreadId = threadId;
     if (!useThreadId) {
@@ -51,18 +51,15 @@ export const sendMessage = action({
  * Remove a thread and all of its messages. Only the owning user is allowed to
  * perform this action.
  */
+/**
+ * Remove a thread and all of its messages. Only the owning user is allowed to
+ * perform this action.
+ */
 export const deleteThread = action({
   args: { threadId: v.string() },
   returns: v.null(),
   handler: async (ctx, { threadId }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not authenticated");
-    }
-    const thread = await ctx.runQuery(components.agent.threads.getThread, { threadId });
-    if (thread === null || thread.userId !== userId) {
-      throw new Error("Thread not found");
-    }
+    await requireOwnThread(ctx, threadId);
     await ctx.runAction(components.agent.threads.deleteAllForThreadIdSync, {
       threadId,
     });
@@ -71,37 +68,29 @@ export const deleteThread = action({
 });
 
 export const updateThread = action({
-  args: { 
+  args: {
     threadId: v.string(),
-    title: v.optional(v.string()) 
+    title: v.optional(v.string()),
   },
   returns: v.object({
     _id: v.string(),
     _creationTime: v.number(),
     status: v.union(v.literal("active"), v.literal("archived")),
     title: v.optional(v.string()),
-    userId: v.optional(v.string())
+    userId: v.optional(v.string()),
   }),
   handler: async (ctx, { threadId, title }) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not authenticated");
-    }
-    const thread = await ctx.runQuery(components.agent.threads.getThread, { threadId });
-    if (thread === null || thread.userId !== userId) {
-      throw new Error("Thread not found");
-    }
-    
-    // Update the thread using the Convex mutation
+    await requireOwnThread(ctx, threadId);
+
     const result = await ctx.runMutation(components.agent.threads.updateThread, {
       threadId,
-      patch: { title }
+      patch: { title },
     });
-    
+
     if (!result) {
-      throw new Error("Failed to update thread");
+      throw new ConvexError("Failed to update thread");
     }
-    
+
     return result;
   },
 });
