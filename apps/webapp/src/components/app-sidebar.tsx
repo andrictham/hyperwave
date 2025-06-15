@@ -73,26 +73,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+          <SidebarMenuItem className="flex items-center justify-between">
+            <Link
+              to="/chat/new"
+              className="flex h-12 items-center gap-2 rounded-md px-2 no-underline hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <img src={logoLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
+              <img src={logoDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
+            </Link>
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <img src={logoLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
-                <img src={logoDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
-                <span className="font-bold text-xl tracking-wide">Hyperwave</span>
+                <div
+                  className={`h-2 w-2 rounded-full ${healthCheck === "OK" ? "bg-green-5" : healthCheck === undefined ? "bg-orange-5" : "bg-red-5"}`}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {healthCheck === undefined
+                    ? "Checking..."
+                    : healthCheck === "OK"
+                      ? "Connected"
+                      : "Error"}
+                </span>
               </div>
-            </SidebarMenuButton>
-            <ModeToggle />
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-2 w-2 rounded-full ${healthCheck === "OK" ? "bg-green-5" : healthCheck === undefined ? "bg-orange-5" : "bg-red-5"}`}
-              />
-              <span className="text-sm text-muted-foreground">
-                {healthCheck === undefined
-                  ? "Checking..."
-                  : healthCheck === "OK"
-                    ? "Connected"
-                    : "Error"}
-              </span>
+              <ModeToggle />
             </div>
           </SidebarMenuItem>
         </SidebarMenu>
