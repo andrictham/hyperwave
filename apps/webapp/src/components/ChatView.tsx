@@ -1,17 +1,22 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
-import { useAction, useQuery } from "convex/react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { useAction, useQuery } from "convex/react";
+import { Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -23,6 +28,38 @@ function ThreadHeader({ threadId }: { threadId?: string }) {
   const deleteThread = useAction(api.chatActions.deleteThread);
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleStartEditing = () => {
+    // Reset the input value to the current thread title
+    if (thread?.title) {
+      setNewTitle(thread.title);
+    }
+    setIsDropdownOpen(false);
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    // Reset to the current thread title when cancelling
+    if (thread?.title) {
+      setNewTitle(thread.title);
+    }
+    setIsEditing(false);
+  };
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      // Use requestAnimationFrame to ensure the input is visible in the DOM
+      const timer = requestAnimationFrame(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          inputRef.current.select();
+        }
+      });
+      return () => cancelAnimationFrame(timer);
+    }
+  }, [isEditing]);
 
   const handleRename = async () => {
     if (!threadId || !newTitle.trim()) {
@@ -64,6 +101,7 @@ function ThreadHeader({ threadId }: { threadId?: string }) {
           {isEditing ? (
             <div className="flex items-center gap-2">
               <Input
+                ref={inputRef}
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={(e) => {
@@ -73,37 +111,66 @@ function ThreadHeader({ threadId }: { threadId?: string }) {
                 className="h-8 w-64"
                 autoFocus
               />
-              <Button variant="ghost" size="sm" onClick={handleRename}>
-                Save
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-100"
+                onClick={handleRename}
+              >
+                <Check className="h-4 w-4" />
+                <span className="sr-only">Save</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-                Cancel
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+                onClick={handleCancel}
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Cancel</span>
               </Button>
             </div>
           ) : (
-            <h1 className="text-lg font-semibold">
-              {!threadId ? 'New chat' : (thread ? thread.title || 'New chat' : <Skeleton className="h-6 w-32" />)}
-            </h1>
+            <button
+              type="button"
+              className="text-lg font-semibold px-2 py-1 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              onClick={handleStartEditing}
+              disabled={!threadId}
+            >
+              {!threadId ? (
+                "New chat"
+              ) : thread ? (
+                thread.title || "New chat"
+              ) : (
+                <Skeleton className="h-6 w-32" />
+              )}
+            </button>
           )}
         </div>
       </div>
-      
+
       {threadId && (
         <div className="absolute right-4">
-          <DropdownMenu>
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <MoreHorizontal className="h-4 w-4" />
                 <span className="sr-only">Thread actions</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsEditing(true)}>
+            <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+              <DropdownMenuItem onSelect={(e) => {
+                e.preventDefault();
+                handleStartEditing();
+              }}>
                 <Pencil className="mr-2 h-4 w-4" />
                 <span>Rename</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
+                onSelect={(e) => e.preventDefault()}
                 onClick={handleDelete}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -248,11 +315,11 @@ export function ChatView({
                 </div>
               </PopoverContent>
             </Popover>
-            <Input 
+            <Input
               ref={inputRef}
-              value={prompt} 
-              onChange={(e) => setPrompt(e.target.value)} 
-              className="flex-1" 
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="flex-1"
               placeholder="Type a message..."
             />
             <Button type="submit" disabled={!modelsLoaded || !prompt.trim() || isStreaming}>
