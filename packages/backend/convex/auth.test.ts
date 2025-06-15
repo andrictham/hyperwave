@@ -1,9 +1,12 @@
 import { expect, test } from "vitest";
-import { requireOwnThread, requireUserId, type Ctx } from "./convex/threadOwnership";
+
+import { requireOwnThread, requireUserId, type Ctx } from "./threadOwnership";
 
 function mockCtx(identity: { subject?: string | null }, thread?: { userId: string } | null): Ctx {
   return {
-    auth: { getUserIdentity: async () => (identity.subject ? { subject: identity.subject } : null) },
+    auth: {
+      getUserIdentity: async () => (identity.subject ? { subject: identity.subject } : null),
+    },
     async runQuery(_fn: unknown, _args: unknown) {
       return thread ?? null;
     },
