@@ -94,92 +94,90 @@ function ThreadHeader({ threadId }: { threadId?: string }) {
   }, [thread?.title]);
 
   return (
-    <header className="flex items-center h-14 border-b px-4 relative">
-      <div className="flex items-center flex-1">
-        <SidebarTrigger className="mr-2" />
-        <div className="flex-1 flex justify-center">
-          {isEditing ? (
-            <div className="flex items-center gap-2">
-              <Input
-                ref={inputRef}
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename();
-                  else if (e.key === "Escape") setIsEditing(false);
-                }}
-                className="h-8 w-64"
-                autoFocus
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-100"
-                onClick={handleRename}
-              >
-                <Check className="h-4 w-4" />
-                <span className="sr-only">Save</span>
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
-                onClick={handleCancel}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Cancel</span>
-              </Button>
-            </div>
-          ) : (
-            <button
+    <header className="flex items-center justify-between h-14 border-b px-4 relative">
+      <SidebarTrigger className="mr-2" />
+      <div className="flex max-w-lg">
+        {isEditing ? (
+          <div className="flex items-center gap-2">
+            <Input
+              ref={inputRef}
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRename();
+                else if (e.key === "Escape") setIsEditing(false);
+              }}
+              className="h-8 w-64"
+              autoFocus
+            />
+            <Button
               type="button"
-              className="text-lg font-semibold px-2 py-1 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              onClick={handleStartEditing}
-              disabled={!threadId}
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-100"
+              onClick={handleRename}
             >
-              {!threadId ? (
-                "New chat"
-              ) : thread ? (
-                thread.title || "New chat"
-              ) : (
-                <Skeleton className="h-6 w-32" />
-              )}
-            </button>
-          )}
-        </div>
+              <Check className="h-4 w-4" />
+              <span className="sr-only">Save</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-100"
+              onClick={handleCancel}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Cancel</span>
+            </Button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="truncate text-lg font-semibold px-2 py-1 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            onClick={handleStartEditing}
+            disabled={!threadId}
+          >
+            {!threadId ? (
+              "New chat"
+            ) : thread ? (
+              thread.title || "New chat"
+            ) : (
+              <Skeleton className="h-6 w-32" />
+            )}
+          </button>
+        )}
       </div>
 
-      {threadId && (
-        <div className="absolute right-4">
-          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Thread actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-              <DropdownMenuItem onSelect={(e) => {
+      <div>
+        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!threadId}>
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Thread actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+            <DropdownMenuItem
+              onSelect={(e) => {
                 e.preventDefault();
                 handleStartEditing();
-              }}>
-                <Pencil className="mr-2 h-4 w-4" />
-                <span>Rename</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onSelect={(e) => e.preventDefault()}
-                onClick={handleDelete}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                <span>Delete</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
+              }}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              <span>Rename</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={(e) => e.preventDefault()}
+              onClick={handleDelete}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   );
 }

@@ -1,5 +1,6 @@
 "use node";
 
+import { type Thread } from "@convex-dev/agent";
 import { ConvexError, v } from "convex/values";
 
 import { components } from "./_generated/api";
@@ -13,6 +14,34 @@ import { requireOwnThread, requireUserId } from "./threadOwnership";
  */
 function isAllowedModel(value: string): value is (typeof allowedModels)[number] {
   return allowedModels.includes(value as (typeof allowedModels)[number]);
+}
+
+/**
+ * Updates the thread title if it's missing or generic.
+ * @param thread - The thread to potentially update
+ * @param ctx - The Convex action context
+ */
+async function maybeUpdateThreadTitle(thread: Thread<any>, ctx: any) {
+  const threadData = await ctx.runQuery(components.agent.threads.getThread, {
+    threadId: thread.threadId,
+  });
+  const existingTitle = threadData?.title;
+
+  if (!existingTitle || existingTitle === "Untitled") {
+    const { text } = await thread.generateText(
+      {
+        prompt:
+          "Reply ONLY with a short, concise title for this conversation of maximum 5 words or 40 characters. SAY NOTHING ELSE.",
+      },
+      { storageOptions: { saveMessages: "none" } },
+    );
+    if (text) {
+      await ctx.runMutation(components.agent.threads.updateThread, {
+        threadId: thread.threadId,
+        patch: { title: text },
+      });
+    }
+  }
 }
 
 /**
@@ -43,14 +72,14 @@ export const sendMessage = action({
     });
     const modelId = model && isAllowedModel(model) ? model : defaultModel;
     await thread.generateText({ prompt, model: openrouter.chat(modelId) });
+
+    // Auto-generate title for new threads or threads with generic titles
+    await maybeUpdateThreadTitle(thread, ctx);
+
     return { threadId: useThreadId };
   },
 });
 
-/**
- * Remove a thread and all of its messages. Only the owning user is allowed to
- * perform this action.
- */
 /**
  * Remove a thread and all of its messages. Only the owning user is allowed to
  * perform this action.
