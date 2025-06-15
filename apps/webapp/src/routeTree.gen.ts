@@ -9,15 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TodosRouteImport } from './routes/todos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
 
-const TodosRoute = TodosRouteImport.update({
-  id: '/todos',
-  path: '/todos',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -31,43 +25,32 @@ const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/todos': typeof TodosRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/todos': typeof TodosRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/todos': typeof TodosRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/todos' | '/chat/$threadId'
+  fullPaths: '/' | '/chat/$threadId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/todos' | '/chat/$threadId'
-  id: '__root__' | '/' | '/todos' | '/chat/$threadId'
+  to: '/' | '/chat/$threadId'
+  id: '__root__' | '/' | '/chat/$threadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  TodosRoute: typeof TodosRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/todos': {
-      id: '/todos'
-      path: '/todos'
-      fullPath: '/todos'
-      preLoaderRoute: typeof TodosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -87,7 +70,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  TodosRoute: TodosRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,
 }
 export const routeTree = rootRouteImport
