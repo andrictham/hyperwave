@@ -8,36 +8,6 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { useAction, useQuery } from "convex/react";
-import type { FunctionReference } from "convex/server";
-
-import type { ThreadStreamQuery } from "../../../../node_modules/@convex-dev/agent/dist/esm/react/types";
-
-/**
- * Filtered subset of the Convex generated API used by this component.
- */
-interface ChatApi {
-  chat: {
-    listThreadMessages: ThreadStreamQuery;
-  };
-  models: {
-    listModels: FunctionReference<
-      "query",
-      "public",
-      Record<never, never>,
-      { defaultModel: string; models: string[] }
-    >;
-  };
-  chatActions: {
-    sendMessage: FunctionReference<
-      "action",
-      "public",
-      { threadId?: string; prompt: string; model?: string },
-      { threadId: string }
-    >;
-  };
-}
-
-const chatApi: ChatApi = api;
 
 /** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {
@@ -83,7 +53,7 @@ export function ChatView({
   onNewThread?: (id: string) => void;
 }) {
   const [prompt, setPrompt] = useState("");
-  const modelsConfig = useQuery(chatApi.models.listModels);
+  const modelsConfig = useQuery(api.models.listModels);
   const modelsLoaded = modelsConfig !== undefined;
   const [model, setModel] = useState<string>();
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
@@ -94,7 +64,7 @@ export function ChatView({
   }, [modelsConfig, model]);
   const messagesQuery = threadId
     ? useThreadMessages(
-        chatApi.chat.listThreadMessages,
+        api.chat.listThreadMessages,
         { threadId },
         {
           initialNumItems: 20,
@@ -104,7 +74,7 @@ export function ChatView({
     : undefined;
   const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
 
-  const send = useAction(chatApi.chatActions.sendMessage);
+  const send = useAction(api.chatActions.sendMessage);
 
   const isStreaming = (messagesQuery as { streaming?: boolean } | undefined)?.streaming ?? false;
 
