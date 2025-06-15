@@ -16,9 +16,9 @@ export const openrouter = createOpenRouter({
  * Agent instance responsible for handling LLM interactions for the support
  * chat. It defaults to the server's `defaultModel` configuration.
  */
-const supportAgent = new Agent(components.agent, {
+const chatAgent = new Agent(components.agent, {
   chat: openrouter.chat(defaultModel),
   instructions: "You are a helpful assistant.",
 });
 
-export default supportAgent;
+export default chatAgent;
