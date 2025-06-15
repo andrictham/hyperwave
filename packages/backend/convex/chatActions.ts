@@ -5,12 +5,30 @@ import { v } from "convex/values";
 
 import { components } from "./_generated/api";
 import { action } from "./_generated/server";
-import agent from "./agent";
+import agent, { openrouter } from "./agent";
+import { allowedModels, defaultModel } from "./models";
 
+/**
+ * Type guard ensuring a value is part of the `allowedModels` whitelist.
+ */
+function isAllowedModel(value: string): value is (typeof allowedModels)[number] {
+  return allowedModels.includes(value as (typeof allowedModels)[number]);
+}
+
+/**
+ * Action used by the client to send a prompt to a given thread. If no thread
+ * ID is provided, a new thread will be created for the authenticated user.
+ * Optionally accepts a specific model ID. Any invalid model IDs are ignored and
+ * the server's default model is used instead.
+ */
 export const sendMessage = action({
-  args: { threadId: v.optional(v.string()), prompt: v.string() },
+  args: {
+    threadId: v.optional(v.string()),
+    prompt: v.string(),
+    model: v.optional(v.string()),
+  },
   returns: v.object({ threadId: v.string() }),
-  handler: async (ctx, { threadId, prompt }) => {
+  handler: async (ctx, { threadId, prompt, model }) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
       throw new Error("Not authenticated");
@@ -20,12 +38,19 @@ export const sendMessage = action({
       const created = await agent.createThread(ctx, { userId });
       useThreadId = created.threadId;
     }
-    const { thread } = await agent.continueThread(ctx, { threadId: useThreadId });
-    await thread.generateText({ prompt });
+    const { thread } = await agent.continueThread(ctx, {
+      threadId: useThreadId,
+    });
+    const modelId = model && isAllowedModel(model) ? model : defaultModel;
+    await thread.generateText({ prompt, model: openrouter.chat(modelId) });
     return { threadId: useThreadId };
   },
 });
 
+/**
+ * Remove a thread and all of its messages. Only the owning user is allowed to
+ * perform this action.
+ */
 export const deleteThread = action({
   args: { threadId: v.string() },
   returns: v.null(),

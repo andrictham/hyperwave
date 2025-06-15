@@ -1,36 +1,50 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Markdown } from "@/components/markdown";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import type { FunctionReference } from "convex/server";
 
 import type { ThreadStreamQuery } from "../../../../node_modules/@convex-dev/agent/dist/esm/react/types";
 
+/**
+ * Filtered subset of the Convex generated API used by this component.
+ */
 interface ChatApi {
   chat: {
     listThreadMessages: ThreadStreamQuery;
+  };
+  models: {
+    listModels: FunctionReference<
+      "query",
+      "public",
+      Record<never, never>,
+      { defaultModel: string; models: string[] }
+    >;
   };
   chatActions: {
     sendMessage: FunctionReference<
       "action",
       "public",
-      { threadId?: string; prompt: string },
+      { threadId?: string; prompt: string; model?: string },
       { threadId: string }
     >;
   };
 }
 
-const chatApi = api as unknown as ChatApi;
+const chatApi: ChatApi = api;
 
+/** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {
   return typeof value === "object" && value !== null && "result" in value;
 }
 
+/** Render a single message part based on its type. */
 function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   switch (part.type) {
     case "text":
@@ -56,6 +70,11 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   }
 }
 
+/**
+ * Primary chat view showing the list of messages for a thread and a form to
+ * compose new messages. A model can be selected per message via a popover
+ * menu.
+ */
 export function ChatView({
   threadId,
   onNewThread,
@@ -64,6 +83,15 @@ export function ChatView({
   onNewThread?: (id: string) => void;
 }) {
   const [prompt, setPrompt] = useState("");
+  const modelsConfig = useQuery(chatApi.models.listModels);
+  const modelsLoaded = modelsConfig !== undefined;
+  const [model, setModel] = useState<string>();
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  useEffect(() => {
+    if (modelsConfig && !model) {
+      setModel(modelsConfig.defaultModel);
+    }
+  }, [modelsConfig, model]);
   const messagesQuery = threadId
     ? useThreadMessages(
         chatApi.chat.listThreadMessages,
@@ -83,8 +111,8 @@ export function ChatView({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
-    if (!text) return;
-    const result = await send({ threadId, prompt: text });
+    if (!text || !modelsLoaded || !model) return;
+    const result = await send({ threadId, prompt: text, model });
     setPrompt("");
     if (!threadId && onNewThread && result.threadId) {
       onNewThread(result.threadId);
@@ -109,8 +137,32 @@ export function ChatView({
             ))}
           </main>
           <form onSubmit={handleSubmit} className="flex gap-2 p-2 border-t">
+            <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" disabled={!modelsLoaded}>
+                  {modelsLoaded ? model : "Loading..."}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0">
+                <div className="flex flex-col">
+                  {modelsConfig?.models.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        setModel(m);
+                        setModelMenuOpen(false);
+                      }}
+                      className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
             <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} className="flex-1" />
-            <Button type="submit" disabled={!prompt.trim() || isStreaming}>
+            <Button type="submit" disabled={!modelsLoaded || !prompt.trim() || isStreaming}>
               Send
             </Button>
           </form>
