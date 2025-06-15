@@ -289,47 +289,44 @@ export function ChatView({
               </div>
             ))}
           </main>
-          <form onSubmit={handleSubmit} className="p-4 border-t">
-            <div className="relative">
-              <Textarea
-                ref={inputRef}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                minRows={3}
-                maxRows={6}
-                placeholder="Type a message..."
-                className="pr-12 pb-12"
-              />
-              <div className="absolute bottom-2 left-2">
-                <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-                  <PopoverTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
-                      {modelsLoaded ? model : "Loading..."}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0">
-                    <div className="flex flex-col">
-                      {modelsConfig?.models.map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => {
-                            setModel(m);
-                            setModelMenuOpen(false);
-                          }}
-                          className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
-                        >
-                          {m}
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
+          <form onSubmit={handleSubmit} className="px-6 py-4">
+            <Textarea
+              ref={inputRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              minRows={3}
+              maxRows={6}
+              placeholder="Type a message..."
+            />
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
+                    {modelsLoaded ? model : "Loading..."}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0">
+                  <div className="flex flex-col">
+                    {modelsConfig?.models.map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => {
+                          setModel(m);
+                          setModelMenuOpen(false);
+                        }}
+                        className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button
                 type="submit"
                 size="icon"
-                className="absolute bottom-2 right-2 rounded-full"
+                className="rounded-full"
                 disabled={!modelsLoaded || !prompt.trim() || isStreaming}
               >
                 <ArrowUp className="h-4 w-4" />
