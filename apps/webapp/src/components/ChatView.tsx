@@ -289,49 +289,52 @@ export function ChatView({
               </div>
             ))}
           </main>
-          <form onSubmit={handleSubmit} className="px-6 py-4">
-            <Textarea
-              ref={inputRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              minRows={3}
-              maxRows={6}
-              placeholder="Type a message..."
-            />
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-                <PopoverTrigger asChild>
-                  <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
-                    {modelsLoaded ? model : "Loading..."}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="p-0">
-                  <div className="flex flex-col">
-                    {modelsConfig?.models.map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => {
-                          setModel(m);
-                          setModelMenuOpen(false);
-                        }}
-                        className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-              <Button
-                type="submit"
-                size="icon"
-                className="rounded-full"
-                disabled={!modelsLoaded || !prompt.trim() || isStreaming}
-              >
-                <ArrowUp className="h-4 w-4" />
-                <span className="sr-only">Send</span>
-              </Button>
+          <form onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
+            <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
+              <Textarea
+                ref={inputRef}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                minRows={3}
+                maxRows={6}
+                placeholder="Type a message..."
+                className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
+              />
+              <div className="flex items-end justify-between">
+                <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
+                      {modelsLoaded ? model : "Loading..."}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0">
+                    <div className="flex flex-col">
+                      {modelsConfig?.models.map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => {
+                            setModel(m);
+                            setModelMenuOpen(false);
+                          }}
+                          className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="rounded-full"
+                  disabled={!modelsLoaded || !prompt.trim() || isStreaming}
+                >
+                  <ArrowUp className="h-4 w-4" />
+                  <span className="sr-only">Send</span>
+                </Button>
+              </div>
             </div>
           </form>
         </div>
