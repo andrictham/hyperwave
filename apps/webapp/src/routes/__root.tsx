@@ -13,11 +13,15 @@ import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 
 import "../index.css";
 
+import type { ConvexReactClient } from "convex/react";
+
 /**
  * Router-wide context available to all routes.
  */
-// Using Record<string, never> to represent an empty object type
-export type RouterAppContext = Record<string, never>;
+export interface RouterAppContext {
+  /** Convex client used for loader queries */
+  convex: ConvexReactClient;
+}
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,

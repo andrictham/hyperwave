@@ -1,6 +1,19 @@
 import { ChatView } from "@/components/ChatView";
-export const Route = createFileRoute("/_sidebar/chat/$threadId")({
+import { CatchBoundary, redirect, useRouter } from "@tanstack/react-router";
+import { api } from "@hyperwave/backend/convex/_generated/api";
 
+  beforeLoad: async ({ params, context }) => {
+    try {
+      const thread = await context.convex.query(api.chat.getThread, {
+        threadId: params.threadId,
+      });
+      if (thread === null) {
+        throw new Error("not found");
+      }
+    } catch {
+      throw redirect({ to: "/" });
+    }
+  },
 export const Route = createFileRoute("/chat/$threadId")({
   component: ThreadRoute,
 });
