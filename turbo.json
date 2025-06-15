@@ -27,6 +27,11 @@
     "lint": {
       "dependsOn": ["^lint"],
       "outputs": []
+    },
+    "test": {
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["coverage/**"],
+      "cache": true
     }
   }
 }
