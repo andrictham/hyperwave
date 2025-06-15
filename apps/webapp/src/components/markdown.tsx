@@ -1,11 +1,8 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {
-  getSingletonHighlighter,
-  type Highlighter,
-  type LanguageInput,
-} from "shiki";
+import { getSingletonHighlighter, type Highlighter } from "shiki";
 import nord from "shiki/themes/nord.mjs";
 
 /** Props for the Markdown component. */
@@ -19,7 +16,7 @@ export function Markdown({ children }: MarkdownProps) {
   const [highlighter, setHighlighter] = React.useState<Highlighter | null>(null);
 
   React.useEffect(() => {
-    const langs: readonly LanguageInput[] = [
+    const langs = [
       "javascript",
       "typescript",
       "jsx",
@@ -42,10 +39,10 @@ export function Markdown({ children }: MarkdownProps) {
     node?: unknown;
     inline?: boolean;
     className?: string;
-    children?: React.ReactNode[];
+    children?: React.ReactNode;
   }
 
-  const components = React.useMemo(() => {
+  const components = React.useMemo<Components>(() => {
     return {
       code({ node: _node, inline, className, children: codeChildren }: CodeProps) {
         const code = String(codeChildren ?? "").replace(/\n$/, "");
@@ -71,7 +68,7 @@ export function Markdown({ children }: MarkdownProps) {
   }, [highlighter]);
 
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className="prose dark:prose-invert mx-auto">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {children}
       </ReactMarkdown>

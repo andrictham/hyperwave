@@ -4,12 +4,12 @@
 
 ## Features
 
-- [ ] Authentication with GitHub
+- [x] Authentication with GitHub
 - [ ] Chat with multiple LLMs. Bring your own key via [OpenRouter](https://openrouter.ai)
 - [ ] Per-user persistent chat history synced to Convex
 - [ ] Streamed responses
 - [ ] Resumable streams
-- [ ] Syntax highlighting of LLM responses via Shiki
+- [x] Syntax highlighting of LLM responses via Shiki
 - [ ] Ability to share a conversation with another user via a public link
 - [ ] File and image attachment support
 - [ ] Web search via Jina

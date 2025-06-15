@@ -14,6 +14,8 @@ import type * as chat from "../chat.js";
 import type * as chatActions from "../chatActions.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
+import type * as models from "../models.js";
+  models: typeof models;
 import type * as threadOwnership from "../threadOwnership.js";
 import type * as todos from "../todos.js";
 
