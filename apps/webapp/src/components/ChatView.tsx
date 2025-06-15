@@ -265,10 +265,15 @@ export function ChatView({
     e.preventDefault();
     const text = prompt.trim();
     if (!text || !modelsLoaded || !model) return;
-    const result = await send({ threadId, prompt: text, model });
     setPrompt("");
-    if (!threadId && onNewThread && result.threadId) {
-      onNewThread(result.threadId);
+    try {
+      const result = await send({ threadId, prompt: text, model });
+      formRef.current?.reset();
+      if (!threadId && onNewThread && result.threadId) {
+        onNewThread(result.threadId);
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error);
     }
   };
 
