@@ -18,7 +18,9 @@ import {
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { Link } from "@tanstack/react-router";
 import { useAction, useQuery } from "convex/react";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2, X } from "lucide-react";
+import { useState } from "react";
+import { Input } from "./ui/input";
 
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
@@ -28,6 +30,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const threads = useQuery(api.chat.listThreads) ?? [];
   const user = useQuery(api.auth.me);
   const deleteThread = useAction(api.chatActions.deleteThread);
+  const updateThread = useAction(api.chatActions.updateThread);
+  const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
+  const [newThreadTitle, setNewThreadTitle] = useState("");
+
+  const handleRenameStart = (threadId: string, currentTitle: string) => {
+    setEditingThreadId(threadId);
+    setNewThreadTitle(currentTitle);
+  };
+
+  const handleRenameCancel = () => {
+    setEditingThreadId(null);
+    setNewThreadTitle("");
+  };
+
+  const handleRenameSubmit = async (threadId: string) => {
+    const title = newThreadTitle.trim();
+    if (!title) return;
+    
+    try {
+      await updateThread({
+        threadId,
+        title
+      });
+      setEditingThreadId(null);
+      setNewThreadTitle("");
+    } catch (error) {
+      console.error("Failed to rename thread:", error);
+    }
+  };
 
   return (
     <Sidebar variant="inset" {...props}>
@@ -69,14 +100,72 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       {t.title ?? "Untitled"}
                     </Link>
                   </SidebarMenuButton>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteThread({ threadId: t._id })}
-                    aria-label="Delete thread"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {editingThreadId === t._id ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        value={newThreadTitle}
+                        onChange={(e) => setNewThreadTitle(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleRenameSubmit(t._id);
+                          } else if (e.key === 'Escape') {
+                            handleRenameCancel();
+                          }
+                        }}
+                        className="h-8 w-32 text-sm"
+                        autoFocus
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRenameSubmit(t._id);
+                        }}
+                        aria-label="Save rename"
+                      >
+                        <div className="h-4 w-4 flex items-center justify-center">✓</div>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRenameCancel();
+                        }}
+                        aria-label="Cancel rename"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRenameStart(t._id, t.title ?? "");
+                        }}
+                        aria-label="Rename thread"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteThread({ threadId: t._id });
+                        }}
+                        aria-label="Delete thread"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
