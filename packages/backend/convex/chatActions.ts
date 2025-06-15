@@ -69,3 +69,39 @@ export const deleteThread = action({
     return null;
   },
 });
+
+export const updateThread = action({
+  args: { 
+    threadId: v.string(),
+    title: v.optional(v.string()) 
+  },
+  returns: v.object({
+    _id: v.string(),
+    _creationTime: v.number(),
+    status: v.union(v.literal("active"), v.literal("archived")),
+    title: v.optional(v.string()),
+    userId: v.optional(v.string())
+  }),
+  handler: async (ctx, { threadId, title }) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not authenticated");
+    }
+    const thread = await ctx.runQuery(components.agent.threads.getThread, { threadId });
+    if (thread === null || thread.userId !== userId) {
+      throw new Error("Thread not found");
+    }
+    
+    // Update the thread using the Convex mutation
+    const result = await ctx.runMutation(components.agent.threads.updateThread, {
+      threadId,
+      patch: { title }
+    });
+    
+    if (!result) {
+      throw new Error("Failed to update thread");
+    }
+    
+    return result;
+  },
+});

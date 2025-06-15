@@ -68,7 +68,7 @@ export function Markdown({ children }: MarkdownProps) {
   }, [highlighter]);
 
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className="prose dark:prose-invert mx-auto">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {children}
       </ReactMarkdown>

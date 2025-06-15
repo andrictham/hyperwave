@@ -1,10 +1,7 @@
-
-import { LoginForm } from "@/components/login-form";
 import { ChatView } from "@/components/ChatView";
-import { createFileRoute } from "@tanstack/react-router";
-import { useNavigate } from "@tanstack/react-router";
-import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
-
+import { LoginCard } from "@/components/login-card";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
@@ -19,7 +16,9 @@ function HomeComponent() {
         <SignInLogin />
       </Unauthenticated>
       <Authenticated>
-        <ChatView onNewThread={(id) => navigate({ to: "/chat/$threadId", params: { threadId: id } })} />
+        <ChatView
+          onNewThread={(id) => navigate({ to: "/chat/$threadId", params: { threadId: id } })}
+        />
       </Authenticated>
     </>
   );
@@ -32,14 +31,14 @@ function SignInLogin() {
         <div className="flex justify-center gap-2 md:justify-start">
           <a href="#" className="flex items-center gap-2 font-medium">
             <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-             Logo here
+              Logo here
             </div>
             Hyperwave
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
-            <LoginForm />
+            <LoginCard />
           </div>
         </div>
       </div>
