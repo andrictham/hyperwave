@@ -12,7 +12,7 @@ const router = createRouter({
   routeTree,
   defaultPreload: "intent",
   defaultPendingComponent: () => <Loader />,
-  context: {},
+  context: { convex },
   Wrap: function WrapComponent({ children }: { children: ReactNode }) {
     return <ConvexAuthProvider client={convex}>{children}</ConvexAuthProvider>;
   },
