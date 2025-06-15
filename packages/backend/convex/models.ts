@@ -10,8 +10,8 @@ import { query } from "./_generated/server";
  * when narrowing values.
  */
 export const allowedModels = [
-  "deepseek/deepseek-chat-v3-0324:free",
   "deepseek/deepseek-r1-0528:free",
+  "deepseek/deepseek-chat-v3-0324:free",
   "deepseek/deepseek-r1:free",
   "google/gemma-3-27b-it:free",
   "google/gemini-2.0-flash-exp:free",
