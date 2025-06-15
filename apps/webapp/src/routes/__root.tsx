@@ -10,19 +10,10 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
-import { ConvexReactClient } from "convex/react";
 
 import "../index.css";
 
-/**
- * Router-wide context available to all routes.
- */
-export interface RouterAppContext {
-  /** Convex client instance used for non-hook queries in route loaders. */
-  convex: ConvexReactClient;
-}
-
-export const Route = createRootRouteWithContext<RouterAppContext>()({
+export const Route = createRootRouteWithContext()({
   component: RootComponent,
   head: () => ({
     meta: [
