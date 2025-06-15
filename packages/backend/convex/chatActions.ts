@@ -1,6 +1,6 @@
 "use node";
 
-import { v, ConvexError } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { components } from "./_generated/api";
 import { action } from "./_generated/server";
@@ -27,6 +27,11 @@ export const sendMessage = action({
     prompt: v.string(),
     model: v.optional(v.string()),
   },
+  args: {
+    threadId: v.optional(v.string()),
+    prompt: v.string(),
+    model: v.optional(v.string()),
+  },
   returns: v.object({ threadId: v.string() }),
   handler: async (ctx, { threadId, prompt, model }) => {
     const userId = await requireUserId(ctx);
@@ -47,6 +52,10 @@ export const sendMessage = action({
   },
 });
 
+/**
+ * Remove a thread and all of its messages. Only the owning user is allowed to
+ * perform this action.
+ */
 /**
  * Remove a thread and all of its messages. Only the owning user is allowed to
  * perform this action.

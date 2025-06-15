@@ -1,10 +1,11 @@
+import { vMessageDoc, vStreamArgs, vThreadDoc } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import { vStreamArgs, vThreadDoc, vMessageDoc } from "@convex-dev/agent";
+
 import { components } from "./_generated/api";
 import { query } from "./_generated/server";
-import { requireOwnThread, requireUserId } from "./threadOwnership";
 import agent from "./agent";
+import { requireOwnThread, requireUserId } from "./threadOwnership";
 
 export const listThreads = query({
   args: {},
@@ -43,7 +44,7 @@ export const listThreadMessages = query({
     isDone: v.boolean(),
     splitCursor: v.optional(v.union(v.string(), v.null())),
     pageStatus: v.optional(
-      v.union(v.literal("SplitRecommended"), v.literal("SplitRequired"), v.null())
+      v.union(v.literal("SplitRecommended"), v.literal("SplitRequired"), v.null()),
     ),
     streams: v.optional(v.any()),
   }),
@@ -57,4 +58,3 @@ export const listThreadMessages = query({
     return { ...paginated, streams };
   },
 });
-
