@@ -1,15 +1,11 @@
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useAuthActions } from "@convex-dev/auth/react";
- 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"form">) {
-    const { signIn } = useAuthActions();
+
+export function LoginCard({ className, ...props }: React.ComponentProps<"div">) {
+  const { signIn } = useAuthActions();
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <div className={cn("flex flex-col gap-6", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-bold">Sign up or login</h1>
       </div>
@@ -24,12 +20,6 @@ export function LoginForm({
           Login with GitHub
         </Button>
       </div>
-      <div className="text-center text-sm">
-        Don&apos;t have an account?{" "}
-        <a href="#" className="underline underline-offset-4">
-          Sign up
-        </a>
-      </div>
-    </form>
-  )
+    </div>
+  );
 }
