@@ -10,11 +10,17 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
+import { ConvexReactClient } from "convex/react";
 
 import "../index.css";
 
-// Using Record<string, never> to represent an empty object type
-export type RouterAppContext = Record<string, never>;
+/**
+ * Router-wide context available to all routes.
+ */
+export interface RouterAppContext {
+  /** Convex client instance used for non-hook queries in route loaders. */
+  convex: ConvexReactClient;
+}
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
