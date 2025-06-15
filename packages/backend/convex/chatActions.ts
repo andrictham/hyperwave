@@ -27,11 +27,6 @@ export const sendMessage = action({
     prompt: v.string(),
     model: v.optional(v.string()),
   },
-  args: {
-    threadId: v.optional(v.string()),
-    prompt: v.string(),
-    model: v.optional(v.string()),
-  },
   returns: v.object({ threadId: v.string() }),
   handler: async (ctx, { threadId, prompt, model }) => {
     const userId = await requireUserId(ctx);
