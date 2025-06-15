@@ -5,7 +5,8 @@ import { ConvexError, v } from "convex/values";
 
 import { components } from "./_generated/api";
 import { action } from "./_generated/server";
-import agent, { openrouter } from "./agent";
+import agent, { createProvider } from "./agent";
+import { decryptApiKey } from "./apiKeyCipher";
 import { allowedModels, defaultModel } from "./models";
 import { requireOwnThread, requireUserId } from "./threadOwnership";
 
@@ -70,8 +71,20 @@ export const sendMessage = action({
     const { thread } = await agent.continueThread(ctx, {
       threadId: useThreadId,
     });
+
+    const record = await ctx.db
+      .query("user_settings")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    const apiKey = record
+      ? await decryptApiKey(
+          record.encryptedApiKey,
+          process.env.ENCRYPTION_SECRET ?? "",
+        )
+      : process.env.OPENROUTER_API_KEY ?? "";
+    const provider = createProvider(apiKey);
     const modelId = model && isAllowedModel(model) ? model : defaultModel;
-    await thread.generateText({ prompt, model: openrouter.chat(modelId) });
+    await thread.generateText({ prompt, model: provider.chat(modelId) });
 
     // Auto-generate title for new threads or threads with generic titles
     await maybeUpdateThreadTitle(thread, ctx);

@@ -8,9 +8,13 @@ import { defaultModel } from "./models";
  * Shared OpenRouter provider used across the backend. The API key should be
  * configured via the `OPENROUTER_API_KEY` environment variable.
  */
-export const openrouter = createOpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY ?? "YOUR_API_KEY",
-});
+export function createProvider(apiKey: string) {
+  return createOpenRouter({ apiKey });
+}
+
+export const openrouter = createProvider(
+  process.env.OPENROUTER_API_KEY ?? "YOUR_API_KEY",
+);
 
 /**
  * Agent instance responsible for handling LLM interactions for the support

@@ -17,7 +17,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from "lucide-react";
+import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Settings } from "lucide-react";
+import { useState } from "react";
+import { OpenRouterKeyDialog } from "@/components/openrouter-key-dialog";
 
 export function NavUser({
   user,
@@ -30,8 +32,10 @@ export function NavUser({
 }) {
   const { signOut } = useAuthActions();
   const { isMobile } = useSidebar();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
+    <>
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
@@ -57,7 +61,6 @@ export function NavUser({
             align="end"
             sideOffset={4}
           >
-            {/* TODO: Add more user settings */}
             {/* <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
@@ -93,6 +96,11 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator /> */}
+            <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+              <Settings />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => void signOut()} variant="destructive">
               <LogOut />
               Log out
@@ -101,5 +109,7 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
+    <OpenRouterKeyDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
   );
 }
