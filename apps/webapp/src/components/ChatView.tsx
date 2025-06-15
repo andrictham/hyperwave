@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { useNavigate } from "@tanstack/react-router";
@@ -279,13 +280,20 @@ export function ChatView({
           <ThreadHeader threadId={threadId} />
           <main className="flex-1 overflow-y-auto p-4 space-y-4">
             {messageList.map((m) => (
-              <div key={m.key} className="space-y-1">
-                <div className="font-semibold capitalize">{m.role}</div>
-                <div className="flex flex-col gap-1">
-                  {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                    <div key={index}>{renderPart(part)}</div>
-                  ))}
-                </div>
+              <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
+                {m.role === "user" ? (
+                  <div className="bg-secondary text-secondary-foreground rounded-xl px-4 py-2 shadow max-w-[70%] min-w-[10rem]">
+                    {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                      <div key={index}>{renderPart(part)}</div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="w-full px-2">
+                    {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                      <div key={index}>{renderPart(part)}</div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </main>
