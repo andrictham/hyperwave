@@ -14,6 +14,7 @@ import type * as chat from "../chat.js";
 import type * as chatActions from "../chatActions.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
+import type * as threadOwnership from "../threadOwnership.js";
 import type * as todos from "../todos.js";
 
 import type {
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   chatActions: typeof chatActions;
   healthCheck: typeof healthCheck;
   http: typeof http;
+  threadOwnership: typeof threadOwnership;
   todos: typeof todos;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
