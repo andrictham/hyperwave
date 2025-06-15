@@ -20,6 +20,17 @@ export const listThreads = query({
   },
 });
 
+export const getThread = query({
+  args: {
+    threadId: v.string(),
+  },
+  returns: v.union(vThreadDoc, v.null()),
+  handler: async (ctx, { threadId }) => {
+    const { thread } = await requireOwnThread(ctx, threadId);
+    return thread;
+  },
+});
+
 export const listThreadMessages = query({
   args: {
     threadId: v.string(),

@@ -1,8 +1,15 @@
 import * as React from "react";
+import { useState } from "react";
 import logoDark from "@/assets/hyperwave-logo-dark.png";
 import logoLight from "@/assets/hyperwave-logo-light.png";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -12,18 +19,19 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { Link } from "@tanstack/react-router";
 import { useAction, useQuery } from "convex/react";
-import { Pencil, Trash2, X } from "lucide-react";
-import { useState } from "react";
-import { Input } from "./ui/input";
+import { MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const healthCheck = useQuery(api.healthCheck?.get);
@@ -33,6 +41,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const updateThread = useAction(api.chatActions.updateThread);
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [newThreadTitle, setNewThreadTitle] = useState("");
+  const { isMobile } = useSidebar();
 
   const handleRenameStart = (threadId: string, currentTitle: string) => {
     setEditingThreadId(threadId);
@@ -47,11 +56,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const handleRenameSubmit = async (threadId: string) => {
     const title = newThreadTitle.trim();
     if (!title) return;
-    
+
     try {
       await updateThread({
         threadId,
-        title
+        title,
       });
       setEditingThreadId(null);
       setNewThreadTitle("");
@@ -64,26 +73,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+          <SidebarMenuItem className="flex items-center justify-between">
+            <Link
+              to="/chat/new"
+              className="flex h-12 items-center gap-2 rounded-md px-2 no-underline hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <img src={logoLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
+              <img src={logoDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
+            </Link>
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <img src={logoLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
-                <img src={logoDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
-                <span className="font-bold text-xl tracking-wide">Hyperwave</span>
+                <div
+                  className={`h-2 w-2 rounded-full ${healthCheck === "OK" ? "bg-green-5" : healthCheck === undefined ? "bg-orange-5" : "bg-red-5"}`}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {healthCheck === undefined
+                    ? "Checking..."
+                    : healthCheck === "OK"
+                      ? "Connected"
+                      : "Error"}
+                </span>
               </div>
-            </SidebarMenuButton>
-            <ModeToggle />
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-2 w-2 rounded-full ${healthCheck === "OK" ? "bg-green-5" : healthCheck === undefined ? "bg-orange-5" : "bg-red-5"}`}
-              />
-              <span className="text-sm text-muted-foreground">
-                {healthCheck === undefined
-                  ? "Checking..."
-                  : healthCheck === "OK"
-                    ? "Connected"
-                    : "Error"}
-              </span>
+              <ModeToggle />
             </div>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -101,16 +112,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Link>
                   </SidebarMenuButton>
                   {editingThreadId === t._id ? (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 pl-1">
                       <Input
                         value={newThreadTitle}
                         onChange={(e) => setNewThreadTitle(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()} // Prevent link navigation
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
+                          if (e.key === "Enter") {
                             e.preventDefault();
                             handleRenameSubmit(t._id);
-                          } else if (e.key === 'Escape') {
+                          } else if (e.key === "Escape") {
                             handleRenameCancel();
                           }
                         }}
@@ -141,29 +152,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRenameStart(t._id, t.title ?? "");
-                        }}
-                        aria-label="Rename thread"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteThread({ threadId: t._id });
-                        }}
-                        aria-label="Delete thread"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div className="pl-1">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuAction showOnHover={!isMobile}>
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">More actions</span>
+                          </SidebarMenuAction>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          className="w-48"
+                          side={isMobile ? "bottom" : "right"}
+                          align={isMobile ? "end" : "start"}
+                          onClick={(e) => e.stopPropagation()} // Prevent link navigation from content clicks
+                        >
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              handleRenameStart(t._id, t.title ?? "");
+                            }}
+                          >
+                            <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <span>Rename</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => {
+                              deleteThread({ threadId: t._id });
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />{" "}
+                            {/* Icon color handled by variant destructive */}
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   )}
                 </SidebarMenuItem>

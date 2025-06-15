@@ -78,7 +78,6 @@ export const updateThread = action({
   handler: async (ctx, { threadId, title }) => {
     await requireOwnThread(ctx, threadId);
 
-    // Update the thread using the Convex mutation
     const result = await ctx.runMutation(components.agent.threads.updateThread, {
       threadId,
       patch: { title },
