@@ -9,68 +9,98 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
+import { Route as SidebarRouteImport } from './routes/_sidebar'
+import { Route as SidebarIndexRouteImport } from './routes/_sidebar/index'
+import { Route as SidebarChatThreadIdRouteImport } from './routes/_sidebar/chat.$threadId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const SidebarRoute = SidebarRouteImport.update({
+  id: '/_sidebar',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
+const SidebarIndexRoute = SidebarIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SidebarRoute,
+} as any)
+const SidebarChatThreadIdRoute = SidebarChatThreadIdRouteImport.update({
   id: '/chat/$threadId',
   path: '/chat/$threadId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => SidebarRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
+  '': typeof SidebarRouteWithChildren
+  '/': typeof SidebarIndexRoute
+  '/chat/$threadId': typeof SidebarChatThreadIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
+  '/': typeof SidebarIndexRoute
+  '/chat/$threadId': typeof SidebarChatThreadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
+  '/_sidebar': typeof SidebarRouteWithChildren
+  '/_sidebar/': typeof SidebarIndexRoute
+  '/_sidebar/chat/$threadId': typeof SidebarChatThreadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/chat/$threadId'
+  fullPaths: '' | '/todos' | '/' | '/chat/$threadId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chat/$threadId'
-  id: '__root__' | '/' | '/chat/$threadId'
+  to: '/todos' | '/' | '/chat/$threadId'
+  id:
+    | '__root__'
+    | '/_sidebar'
+    | '/todos'
+    | '/_sidebar/'
+    | '/_sidebar/chat/$threadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ChatThreadIdRoute: typeof ChatThreadIdRoute
+  SidebarRoute: typeof SidebarRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/_sidebar': {
+      id: '/_sidebar'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof SidebarRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chat/$threadId': {
-      id: '/chat/$threadId'
+    '/_sidebar/': {
+      id: '/_sidebar/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof SidebarIndexRouteImport
+      parentRoute: typeof SidebarRoute
+    }
+    '/_sidebar/chat/$threadId': {
+      id: '/_sidebar/chat/$threadId'
       path: '/chat/$threadId'
       fullPath: '/chat/$threadId'
-      preLoaderRoute: typeof ChatThreadIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof SidebarChatThreadIdRouteImport
+      parentRoute: typeof SidebarRoute
     }
   }
 }
 
+interface SidebarRouteChildren {
+  SidebarIndexRoute: typeof SidebarIndexRoute
+  SidebarChatThreadIdRoute: typeof SidebarChatThreadIdRoute
+}
+
+const SidebarRouteChildren: SidebarRouteChildren = {
+  SidebarIndexRoute: SidebarIndexRoute,
+  SidebarChatThreadIdRoute: SidebarChatThreadIdRoute,
+}
+
+const SidebarRouteWithChildren =
+  SidebarRoute._addFileChildren(SidebarRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ChatThreadIdRoute: ChatThreadIdRoute,
+  SidebarRoute: SidebarRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

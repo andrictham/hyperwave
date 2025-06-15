@@ -1,5 +1,5 @@
 import { ChatView } from "@/components/ChatView";
-import { CatchBoundary, createFileRoute, useRouter } from "@tanstack/react-router";
+export const Route = createFileRoute("/_sidebar/chat/$threadId")({
 
 export const Route = createFileRoute("/chat/$threadId")({
   component: ThreadRoute,

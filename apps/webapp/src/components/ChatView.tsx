@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { AppSidebar } from "@/components/app-sidebar";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
@@ -271,61 +270,56 @@ export function ChatView({
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="flex flex-col h-full">
-          <ThreadHeader threadId={threadId} />
-          <main className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messageList.map((m) => (
-              <div key={m.key} className="space-y-1">
-                <div className="font-semibold capitalize">{m.role}</div>
-                <div className="flex flex-col gap-1">
-                  {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                    <div key={index}>{renderPart(part)}</div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </main>
-          <form onSubmit={handleSubmit} className="flex gap-2 p-2 border-t">
-            <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-              <PopoverTrigger asChild>
-                <Button type="button" variant="outline" disabled={!modelsLoaded}>
-                  {modelsLoaded ? model : "Loading..."}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-0">
-                <div className="flex flex-col">
-                  {modelsConfig?.models.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => {
-                        setModel(m);
-                        setModelMenuOpen(false);
-                      }}
-                      className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-            <Input
-              ref={inputRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="flex-1"
-              placeholder="Type a message..."
-            />
-            <Button type="submit" disabled={!modelsLoaded || !prompt.trim() || isStreaming}>
-              Send
+    <div className="flex flex-col h-full">
+      <ThreadHeader threadId={threadId} />
+      <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messageList.map((m) => (
+          <div key={m.key} className="space-y-1">
+            <div className="font-semibold capitalize">{m.role}</div>
+            <div className="flex flex-col gap-1">
+              {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                <div key={index}>{renderPart(part)}</div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </main>
+      <form onSubmit={handleSubmit} className="flex gap-2 p-2 border-t">
+        <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" disabled={!modelsLoaded}>
+              {modelsLoaded ? model : "Loading..."}
             </Button>
-          </form>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+          </PopoverTrigger>
+          <PopoverContent className="p-0">
+            <div className="flex flex-col">
+              {modelsConfig?.models.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setModel(m);
+                    setModelMenuOpen(false);
+                  }}
+                  className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+        <Input
+          ref={inputRef}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          className="flex-1"
+          placeholder="Type a message..."
+        />
+        <Button type="submit" disabled={!modelsLoaded || !prompt.trim() || isStreaming}>
+          Send
+        </Button>
+      </form>
+    </div>
   );
 }
