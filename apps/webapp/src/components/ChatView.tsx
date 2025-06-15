@@ -1,13 +1,121 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { useAction, useQuery } from "convex/react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+
+/**
+ * Component that displays the header with thread title, sidebar toggle, and thread actions
+ */
+function ThreadHeader({ threadId }: { threadId?: string }) {
+  const navigate = useNavigate();
+  const thread = useQuery(api.chat.getThread, threadId ? { threadId } : "skip");
+  const updateThread = useAction(api.chatActions.updateThread);
+  const deleteThread = useAction(api.chatActions.deleteThread);
+  const [isEditing, setIsEditing] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+
+  const handleRename = async () => {
+    if (!threadId || !newTitle.trim()) {
+      setIsEditing(false);
+      return;
+    }
+    try {
+      await updateThread({
+        threadId,
+        title: newTitle.trim(),
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to rename thread:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!threadId) return;
+    try {
+      await deleteThread({ threadId });
+      navigate({ to: "/" }); // Navigate to home after deletion
+    } catch (error) {
+      console.error("Failed to delete thread:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (thread?.title) {
+      setNewTitle(thread.title);
+    }
+  }, [thread?.title]);
+
+  return (
+    <header className="flex items-center h-14 border-b px-4 relative">
+      <div className="flex items-center flex-1">
+        <SidebarTrigger className="mr-2" />
+        <div className="flex-1 flex justify-center">
+          {isEditing ? (
+            <div className="flex items-center gap-2">
+              <Input
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename();
+                  else if (e.key === "Escape") setIsEditing(false);
+                }}
+                className="h-8 w-64"
+                autoFocus
+              />
+              <Button variant="ghost" size="sm" onClick={handleRename}>
+                Save
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+                Cancel
+              </Button>
+            </div>
+          ) : (
+            <h1 className="text-lg font-semibold">
+              {!threadId ? 'New chat' : (thread ? thread.title || 'New chat' : <Skeleton className="h-6 w-32" />)}
+            </h1>
+          )}
+        </div>
+      </div>
+      
+      {threadId && (
+        <div className="absolute right-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Thread actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                <span>Rename</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={handleDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+    </header>
+  );
+}
 
 /** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {
@@ -57,11 +165,19 @@ export function ChatView({
   const modelsLoaded = modelsConfig !== undefined;
   const [model, setModel] = useState<string>();
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (modelsConfig && !model) {
       setModel(modelsConfig.defaultModel);
     }
   }, [modelsConfig, model]);
+
+  // Focus the input when it's a new chat or when the component mounts
+  useEffect(() => {
+    if (!threadId && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [threadId]);
   const messagesQuery = threadId
     ? useThreadMessages(
         api.chat.listThreadMessages,
@@ -94,6 +210,7 @@ export function ChatView({
       <AppSidebar />
       <SidebarInset>
         <div className="flex flex-col h-full">
+          <ThreadHeader threadId={threadId} />
           <main className="flex-1 overflow-y-auto p-4 space-y-4">
             {messageList.map((m) => (
               <div key={m.key} className="space-y-1">
@@ -131,7 +248,13 @@ export function ChatView({
                 </div>
               </PopoverContent>
             </Popover>
-            <Input value={prompt} onChange={(e) => setPrompt(e.target.value)} className="flex-1" />
+            <Input 
+              ref={inputRef}
+              value={prompt} 
+              onChange={(e) => setPrompt(e.target.value)} 
+              className="flex-1" 
+              placeholder="Type a message..."
+            />
             <Button type="submit" disabled={!modelsLoaded || !prompt.trim() || isStreaming}>
               Send
             </Button>

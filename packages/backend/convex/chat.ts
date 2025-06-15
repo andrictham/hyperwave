@@ -21,6 +21,25 @@ export const listThreads = query({
   },
 });
 
+export const getThread = query({
+  args: {
+    threadId: v.string(),
+  },
+  returns: v.union(vThreadDoc, v.null()),
+  handler: async (ctx, { threadId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) return null;
+    
+    const threads = await ctx.runQuery(components.agent.threads.listThreadsByUserId, {
+      userId,
+      order: "desc",
+      paginationOpts: { cursor: null, numItems: 50 },
+    });
+    
+    return threads.page.find(t => t._id === threadId) || null;
+  },
+});
+
 export const listThreadMessages = query({
   args: {
     threadId: v.string(),
