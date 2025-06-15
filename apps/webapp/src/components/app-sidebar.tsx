@@ -75,7 +75,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center justify-between">
             <Link
-              to="/chat/new"
+              to="/"
               className="flex h-12 items-center gap-2 rounded-md px-2 no-underline hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
               <img src={logoLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
@@ -194,7 +194,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
         <NavSecondary className="mt-auto">
-          <Link to="/chat/new">
+          <Link to="/">
             <Button>New Chat</Button>
           </Link>
         </NavSecondary>
