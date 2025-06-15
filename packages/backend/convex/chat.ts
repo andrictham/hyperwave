@@ -1,10 +1,22 @@
+import { vMessageDoc, vStreamArgs, vThreadDoc } from "@convex-dev/agent";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
-import { vStreamArgs, vThreadDoc, vMessageDoc } from "@convex-dev/agent";
+
 import { components } from "./_generated/api";
-import { query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { mutation, query } from "./_generated/server";
+import type { ActionCtx, MutationCtx, QueryCtx } from "./_generated/server";
 import agent from "./agent";
+
+export const DEFAULT_THREAD_TITLE = "New chat";
+
+async function assertAuthenticatedUser(ctx: QueryCtx | MutationCtx | ActionCtx): Promise<string> {
+  const userId = await getAuthUserId(ctx);
+  if (userId === null) {
+    throw new Error("Not authenticated");
+  }
+  return userId;
+}
 
 export const listThreads = query({
   args: {},
@@ -33,7 +45,7 @@ export const listThreadMessages = query({
     isDone: v.boolean(),
     splitCursor: v.optional(v.union(v.string(), v.null())),
     pageStatus: v.optional(
-      v.union(v.literal("SplitRecommended"), v.literal("SplitRequired"), v.null())
+      v.union(v.literal("SplitRecommended"), v.literal("SplitRequired"), v.null()),
     ),
     streams: v.optional(v.any()),
   }),
@@ -47,3 +59,23 @@ export const listThreadMessages = query({
   },
 });
 
+export const createThreadWithFirstMessage = mutation({
+  args: { message: v.string(), optimisticTitle: v.optional(v.string()) },
+  returns: v.object({ threadId: v.string(), messageId: v.string() }),
+  handler: async (ctx, { message, optimisticTitle }) => {
+    const userId = await assertAuthenticatedUser(ctx);
+    const title =
+      optimisticTitle && optimisticTitle.trim().length > 0
+        ? optimisticTitle.trim().slice(0, 48)
+        : DEFAULT_THREAD_TITLE;
+
+    const thread = await agent.createThread(ctx, { userId, title });
+    const { messageId } = await agent.saveMessage(ctx, {
+      threadId: thread.threadId,
+      userId,
+      prompt: message,
+      skipEmbeddings: true,
+    });
+    return { threadId: thread.threadId, messageId };
+  },
+});
