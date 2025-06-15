@@ -40,7 +40,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   models: typeof models;
   todos: typeof todos;
-}>; 
+}>;
 declare const fullApiWithMounts: typeof fullApi;
 
 export declare const api: FilterApi<
