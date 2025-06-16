@@ -442,7 +442,8 @@ export function ChatView({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
-                    className="p-0 w-72"
+                    align="start"
+                    className="p-0"
                     onCloseAutoFocus={(e) => {
                       e.preventDefault();
                       inputRef.current?.focus();
