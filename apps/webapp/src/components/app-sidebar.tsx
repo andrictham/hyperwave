@@ -27,7 +27,7 @@ import {
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { Link } from "@tanstack/react-router";
 import { useAction, useQuery } from "convex/react";
-import { MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
@@ -106,13 +106,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {threads.map((t: { _id: string; title?: string | null }) => (
                 <SidebarMenuItem key={t._id} className="flex items-center">
-                  <SidebarMenuButton asChild className="flex-1 truncate">
+                  <SidebarMenuButton
+                    asChild
+                    className={`flex-1 truncate overflow-hidden px-1  ${editingThreadId === t._id ? "hidden" : ""}`}
+                  >
                     <Link to="/chat/$threadId" params={{ threadId: t._id }} className="truncate">
                       {t.title ?? "Untitled"}
                     </Link>
                   </SidebarMenuButton>
                   {editingThreadId === t._id ? (
-                    <div className="flex items-center gap-1 pl-1">
+                    <div className="relative w-full">
                       <Input
                         value={newThreadTitle}
                         onChange={(e) => setNewThreadTitle(e.target.value)}
@@ -125,37 +128,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             handleRenameCancel();
                           }
                         }}
-                        className="h-8 w-32 text-sm"
+                        className="h-8 w-full pr-13 pl-1.5 text-sm"
                         autoFocus
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRenameSubmit(t._id);
-                        }}
-                        aria-label="Save rename"
-                      >
-                        <div className="h-4 w-4 flex items-center justify-center">✓</div>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRenameCancel();
-                        }}
-                        aria-label="Cancel rename"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {/* Overlay action buttons so the input spans the full width */}
+                      <div className="absolute inset-y-0 right-0 flex items-center gap-0 pr-0.5">
+                        <Button
+                          variant="ghost"
+                          className="h-6 w-6 p-0 flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRenameSubmit(t._id);
+                          }}
+                          aria-label="Save rename"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="h-6 w-6 p-0 flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRenameCancel();
+                          }}
+                          aria-label="Cancel rename"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="pl-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction showOnHover={!isMobile}>
+                          <SidebarMenuAction showOnHover={!isMobile} className="bg-sidebar-accent">
                             <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">More actions</span>
                           </SidebarMenuAction>
