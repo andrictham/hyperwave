@@ -12,8 +12,8 @@ import { requireOwnThread, requireUserId } from "./threadOwnership";
 /**
  * Type guard ensuring a value is part of the `allowedModels` whitelist.
  */
-function isAllowedModel(value: string): value is (typeof allowedModels)[number] {
-  return allowedModels.includes(value as (typeof allowedModels)[number]);
+function isAllowedModel(value: string): value is (typeof allowedModels)[number]["id"] {
+  return allowedModels.some((m) => m.id === value);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
+import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useAction, useQuery } from "convex/react";
 import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
@@ -297,13 +298,42 @@ export function ChatView({
   const modelsLoaded = modelsConfig !== undefined;
   const [model, setModel] = useState<string>();
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [modelFilter, setModelFilter] = useState("");
+  const [activeModelIndex, setActiveModelIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useEffect(() => {
     if (modelsConfig && !model) {
       setModel(modelsConfig.defaultModel);
     }
   }, [modelsConfig, model]);
+
+  const filteredModels = useMemo(() => {
+    if (!modelsConfig) return [] as ModelInfo[];
+    const query = modelFilter.toLowerCase();
+    const base: ModelInfo[] = modelsConfig.models.filter(
+      (m) => m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query),
+    );
+    const selected: ModelInfo | undefined = modelsConfig.models.find((m) => m.id === model);
+    if (selected && !base.some((m) => m.id === selected.id)) {
+      base.unshift(selected);
+    }
+    return base;
+  }, [modelsConfig, modelFilter, model]);
+
+  useEffect(() => {
+    setActiveModelIndex(0);
+  }, [modelFilter, modelMenuOpen, filteredModels.length]);
+
+  useEffect(() => {
+    const target = itemRefs.current[activeModelIndex];
+    if (target) {
+      target.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeModelIndex, filteredModels]);
+
+  const selectedModelInfo: ModelInfo | undefined = modelsConfig?.models.find((m) => m.id === model);
 
   // Focus the input when it's a new chat or when the component mounts
   useEffect(() => {
@@ -382,25 +412,70 @@ export function ChatView({
                 className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
               />
               <div className="flex items-end justify-between">
-                <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+                <Popover
+                  open={modelMenuOpen}
+                  onOpenChange={(open) => {
+                    setModelMenuOpen(open);
+                    if (!open) {
+                      // Focus the textarea when the popover closes
+                      inputRef.current?.focus();
+                    }
+                  }}
+                >
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
-                      {modelsLoaded ? model : "Loading..."}
+                      {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="p-0">
-                    <div className="flex flex-col">
-                      {modelsConfig?.models.map((m) => (
+                  <PopoverContent
+                    className="p-0 w-72"
+                    onCloseAutoFocus={(e) => {
+                      e.preventDefault();
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    <div className="p-2 border-b">
+                      <Input
+                        value={modelFilter}
+                        onChange={(e) => setModelFilter(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setActiveModelIndex((i) => Math.min(i + 1, filteredModels.length - 1));
+                          } else if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setActiveModelIndex((i) => Math.max(i - 1, 0));
+                          } else if (e.key === "Enter") {
+                            e.preventDefault();
+                            const m = filteredModels[activeModelIndex];
+                            if (m) {
+                              setModel(m.id);
+                              setModelMenuOpen(false);
+                            }
+                          }
+                        }}
+                        placeholder="Search models..."
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="max-h-64 overflow-y-auto py-1">
+                      {filteredModels.map((m: ModelInfo, idx: number) => (
                         <button
-                          key={m}
+                          key={m.id}
+                          ref={(el) => {
+                            itemRefs.current[idx] = el;
+                          }}
                           type="button"
                           onClick={() => {
-                            setModel(m);
+                            setModel(m.id);
                             setModelMenuOpen(false);
                           }}
-                          className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
+                          className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${
+                            idx === activeModelIndex ? "bg-accent text-accent-foreground" : ""
+                          } ${m.id === model ? "font-semibold" : ""}`}
                         >
-                          {m}
+                          <span>{m.name}</span>
+                          {m.id === model && <Check className="w-4 h-4" />}
                         </button>
                       ))}
                     </div>
