@@ -1,7 +1,7 @@
 /* eslint-env node */
 /* global console */
-import { randomBytes } from 'crypto';
 import { execSync } from 'child_process';
+import { generateSecret, exportJWK } from 'jose';
 
 /**
  * Generate a new 32-byte secret and upload it to the current Convex project.
@@ -11,6 +11,12 @@ import { execSync } from 'child_process';
  * server-side.
  */
 
-const secret = randomBytes(32).toString('base64');
-console.log(`Generated secret: ${secret}`);
-execSync(`cd packages/backend && npx convex env set ENCRYPTION_SECRET ${secret}`, { stdio: 'inherit' });
+const key = await generateSecret('A256GCM');
+const { k } = await exportJWK(key);
+if (!k) {
+  throw new Error('Failed to export secret');
+}
+console.log(`Generated secret: ${k}`);
+execSync(`cd packages/backend && npx convex env set ENCRYPTION_SECRET ${k}`, {
+  stdio: 'inherit',
+});

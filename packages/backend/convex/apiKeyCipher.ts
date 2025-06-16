@@ -1,16 +1,27 @@
-import { CompactEncrypt, compactDecrypt } from "jose";
+import { CompactEncrypt, compactDecrypt, base64url } from "jose";
 
 /**
- * Derives a 256-bit secret key from the provided secret string.
- * Throws if the secret is missing or shorter than 32 bytes.
+ * Derives a 256-bit secret key from the provided base64url-encoded string.
+ *
+ * The {@link ENCRYPTION_SECRET} environment variable must be a base64url
+ * encoded 32 byte value. This helper decodes the secret and ensures the
+ * resulting byte array is exactly 32 bytes long.
+ *
+ * @param secret - Base64url encoded secret value.
+ * @throws If the secret is missing or does not decode to 32 bytes.
  */
 function deriveSecret(secret: string): Uint8Array {
   if (!secret) throw new Error("Encryption secret missing");
-  const data = new TextEncoder().encode(secret);
-  if (data.length < 32) {
-    throw new Error("Encryption secret must be at least 32 bytes");
+  let decoded: Uint8Array;
+  try {
+    decoded = base64url.decode(secret);
+  } catch {
+    throw new Error("Encryption secret must be base64url encoded");
   }
-  return data.slice(0, 32);
+  if (decoded.length !== 32) {
+    throw new Error("Encryption secret must decode to 32 bytes");
+  }
+  return decoded;
 }
 
 /**

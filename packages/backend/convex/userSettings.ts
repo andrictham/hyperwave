@@ -5,12 +5,13 @@ import { ConvexError, v } from "convex/values";
 import { encryptApiKey } from "./apiKeyCipher";
 
 /**
- * Secret used to encrypt user API keys. Must be a 32 byte string.
+ * Secret used to encrypt user API keys. Must be a base64url encoded 32 byte string.
  *
  * This value is read from the `ENCRYPTION_SECRET` environment variable.
  * Convex will expose this value to all functions and actions. Ensure it is
  * configured via the Convex dashboard and never committed to version control.
  */
+// Non-exported constant to avoid accidental exposure
 const SECRET = process.env.ENCRYPTION_SECRET ?? "";
 
 /**

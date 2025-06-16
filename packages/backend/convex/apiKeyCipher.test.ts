@@ -1,8 +1,10 @@
 import { expect, test } from "vitest";
 
+import { base64url } from "jose";
+
 import { decryptApiKey, encryptApiKey } from "./apiKeyCipher";
 
-const SECRET = "s".repeat(32);
+const SECRET = base64url.encode(new Uint8Array(32).fill(1));
 
 test("encrypts and decrypts", async () => {
   const apiKey = "test-key";
