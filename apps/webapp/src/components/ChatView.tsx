@@ -383,7 +383,7 @@ export function ChatView({
             {messageList.map((m) => (
               <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
                 {m.role === "user" ? (
-                  <div className="bg-secondary text-secondary-foreground rounded-xl px-4 py-2 shadow max-w-[70%] min-w-[10rem] w-fit">
+                  <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
                     {m.parts.map((part: UIMessage["parts"][number], index: number) => (
                       <div key={index}>{renderPart(part)}</div>
                     ))}
