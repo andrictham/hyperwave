@@ -27,7 +27,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
 import { useMutation } from "convex/react";
 import { ArrowUp, Check, Loader2, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
-import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
