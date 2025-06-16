@@ -5,8 +5,9 @@ import { components } from "./_generated/api";
 import { defaultModel } from "./models";
 
 /**
- * Shared OpenRouter provider used across the backend. The API key should be
- * configured via the `OPENROUTER_API_KEY` environment variable.
+ * Create a new OpenRouter provider instance using the given API key.
+ *
+ * @param apiKey - OpenRouter API key used for authenticating requests.
  */
 export function createProvider(apiKey: string) {
   return createOpenRouter({ apiKey });

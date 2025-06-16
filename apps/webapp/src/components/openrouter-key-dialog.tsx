@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { useAction, useQuery } from "convex/react";
 
@@ -13,24 +13,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+/**
+ * Props for {@link OpenRouterKeyDialog}.
+ */
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 /**
- * Dialog allowing the user to manage their personal OpenRouter API key.
+ * Dialog allowing the user to create, update, or delete their personal
+ * OpenRouter API key. The key is persisted server-side via Convex and is never
+ * displayed in plaintext once saved.
  */
 export function OpenRouterKeyDialog({ open, onOpenChange }: Props) {
-  const savedKey = useQuery(api.userSettings.getApiKey);
+  const hasKey = useQuery(api.userSettings.hasApiKey);
   const save = useAction(api.userSettings.saveApiKey);
   const [key, setKey] = useState("");
-
-  useEffect(() => {
-    if (typeof savedKey === "string") {
-      setKey(savedKey);
-    }
-  }, [savedKey]);
 
   const handleSave = async () => {
     await save({ apiKey: key.trim() });
@@ -43,7 +42,9 @@ export function OpenRouterKeyDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>OpenRouter API Key</DialogTitle>
           <DialogDescription>
-            Provide your personal OpenRouter API key to use with Hyperwave.
+            {hasKey
+              ? "Update your saved API key. Leave blank to remove it."
+              : "Provide your personal OpenRouter API key."}
           </DialogDescription>
         </DialogHeader>
         <Input

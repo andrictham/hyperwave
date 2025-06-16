@@ -13,6 +13,7 @@
 - [ ] Ability to share a conversation with another user via a public link
 - [ ] File and image attachment support
 - [ ] Web search via Jina
+- [x] User-provided API keys encrypted with AES-256
 
 ## Stack
 
@@ -41,6 +42,9 @@ There are two .env files used in this project that you must specify when working
 - `/apps/webapp/.env` - Environment variables for the webapp
   - `VITE_CONVEX_URL` - URL of the Convex server, e.g. “https://lively-dog-999.convex.cloud” which you can find in the Convex dashboard
 - `/packages/backend/.env` - Environment variables for the Convex server. This will be auto-generated for you when you run `pnpm dev:setup`
+  - `OPENROUTER_API_KEY` - Default OpenRouter API key used when users have not provided their own
+  - `ENCRYPTION_SECRET` - 32 byte secret used to encrypt user API keys stored in Convex
+  - Set both variables in your Convex dashboard so they are available to all deployed functions.
 
 ## Convex Setup
 

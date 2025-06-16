@@ -4,9 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -17,9 +15,13 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Settings } from "lucide-react";
+import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 import { useState } from "react";
 import { OpenRouterKeyDialog } from "@/components/openrouter-key-dialog";
+
+/**
+ * Menu displayed in the sidebar showing the current user and a dropdown of actions. Provides access to a settings dialog where users can manage their OpenRouter API key.
+ */
 
 export function NavUser({
   user,
