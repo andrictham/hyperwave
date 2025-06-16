@@ -280,18 +280,31 @@ export function ChatView({
           <ThreadHeader threadId={threadId} />
           <main className="flex-1 overflow-y-auto p-4 space-y-4">
             {messageList.map((m) => (
-              <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
+              <div
+                key={m.key}
+                className={cn("flex w-full", m.role === "user" && "justify-end")}
+              >
                 {m.role === "user" ? (
-                  <div className="bg-secondary text-secondary-foreground rounded-xl px-4 py-2 shadow max-w-[70%] min-w-[10rem]">
-                    {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                      <div key={index}>{renderPart(part)}</div>
-                    ))}
+                  <div className="bg-secondary text-secondary-foreground rounded-xl px-4 py-2 shadow max-w-[70%] min-w-[10rem] w-fit">
+                    {m.parts.map(
+                      (
+                        part: UIMessage["parts"][number],
+                        index: number,
+                      ) => (
+                        <div key={index}>{renderPart(part)}</div>
+                      ),
+                    )}
                   </div>
                 ) : (
-                  <div className="w-full px-2">
-                    {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                      <div key={index}>{renderPart(part)}</div>
-                    ))}
+                  <div className="w-full max-w-prose px-2 sm:px-4">
+                    {m.parts.map(
+                      (
+                        part: UIMessage["parts"][number],
+                        index: number,
+                      ) => (
+                        <div key={index}>{renderPart(part)}</div>
+                      ),
+                    )}
                   </div>
                 )}
               </div>
