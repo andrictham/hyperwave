@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover-old";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -428,7 +428,8 @@ export function ChatView({
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
-                    className="p-0 w-72"
+                    align="start"
+                    className="p-0"
                     onCloseAutoFocus={(e) => {
                       e.preventDefault();
                       inputRef.current?.focus();
