@@ -195,7 +195,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
         <NavSecondary className="mt-auto">
           <Link to="/">
-            <Button>New Chat</Button>
+            <Button variant="brand" size="lg" className="overflow-visible z-10 w-full">
+              New Chat
+            </Button>
           </Link>
         </NavSecondary>
       </SidebarContent>
