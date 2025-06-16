@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
-import logoDark from "@/assets/hyperwave-logo-dark.png";
-import logoLight from "@/assets/hyperwave-logo-light.png";
+import logomarkDark from "@/assets/hyperwave-logomark-dark.png";
+import logomarkLight from "@/assets/hyperwave-logomark-light.png";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -78,8 +78,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               to="/"
               className="flex h-12 items-center gap-2 rounded-md px-2 no-underline hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
-              <img src={logoLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
-              <img src={logoDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
+              <img src={logomarkLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
+              <img src={logomarkDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
             </Link>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
