@@ -299,8 +299,10 @@ export function ChatView({
   const [model, setModel] = useState<string>();
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [modelFilter, setModelFilter] = useState("");
+  const [activeModelIndex, setActiveModelIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useEffect(() => {
     if (modelsConfig && !model) {
       setModel(modelsConfig.defaultModel);
@@ -311,9 +313,7 @@ export function ChatView({
     if (!modelsConfig) return [] as ModelInfo[];
     const query = modelFilter.toLowerCase();
     const base: ModelInfo[] = modelsConfig.models.filter(
-      (m) =>
-        m.name.toLowerCase().includes(query) ||
-        m.id.toLowerCase().includes(query)
+      (m) => m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query),
     );
     const selected: ModelInfo | undefined = modelsConfig.models.find((m) => m.id === model);
     if (selected && !base.some((m) => m.id === selected.id)) {
@@ -321,6 +321,17 @@ export function ChatView({
     }
     return base;
   }, [modelsConfig, modelFilter, model]);
+
+  useEffect(() => {
+    setActiveModelIndex(0);
+  }, [modelFilter, modelMenuOpen, filteredModels.length]);
+
+  useEffect(() => {
+    const target = itemRefs.current[activeModelIndex];
+    if (target) {
+      target.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeModelIndex, filteredModels]);
 
   const selectedModelInfo: ModelInfo | undefined = modelsConfig?.models.find((m) => m.id === model);
 
@@ -404,7 +415,7 @@ export function ChatView({
                 <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
-                      {modelsLoaded ? selectedModelInfo?.name ?? model : "Loading..."}
+                      {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="p-0 w-72">
@@ -412,20 +423,41 @@ export function ChatView({
                       <Input
                         value={modelFilter}
                         onChange={(e) => setModelFilter(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setActiveModelIndex((i) => Math.min(i + 1, filteredModels.length - 1));
+                          } else if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setActiveModelIndex((i) => Math.max(i - 1, 0));
+                          } else if (e.key === "Enter") {
+                            e.preventDefault();
+                            const m = filteredModels[activeModelIndex];
+                            if (m) {
+                              setModel(m.id);
+                              setModelMenuOpen(false);
+                            }
+                          }
+                        }}
                         placeholder="Search models..."
                         className="h-8"
                       />
                     </div>
                     <div className="max-h-64 overflow-y-auto py-1">
-                      {filteredModels.map((m: ModelInfo) => (
+                      {filteredModels.map((m: ModelInfo, idx: number) => (
                         <button
                           key={m.id}
+                          ref={(el) => {
+                            itemRefs.current[idx] = el;
+                          }}
                           type="button"
                           onClick={() => {
                             setModel(m.id);
                             setModelMenuOpen(false);
                           }}
-                          className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m.id === model ? "font-semibold" : ""}`}
+                          className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${
+                            idx === activeModelIndex ? "bg-accent text-accent-foreground" : ""
+                          } ${m.id === model ? "font-semibold" : ""}`}
                         >
                           <span>{m.name}</span>
                           {m.id === model && <Check className="w-4 h-4" />}
