@@ -5,7 +5,7 @@
 ## Features
 
 - [x] Authentication with GitHub
-- [ ] Chat with multiple LLMs. Bring your own key via [OpenRouter](https://openrouter.ai)
+- [x] Chat with multiple LLMs. Bring your own key via [OpenRouter](https://openrouter.ai)
 - [ ] Per-user persistent chat history synced to Convex
 - [ ] Streamed responses
 - [ ] Resumable streams
@@ -44,7 +44,7 @@ There are two .env files used in this project that you must specify when working
 - `/packages/backend/.env` - Environment variables for the Convex server. This will be auto-generated for you when you run `pnpm dev:setup`
   - `OPENROUTER_API_KEY` - Default OpenRouter API key used when users have not provided their own
   - `ENCRYPTION_SECRET` - 32 byte secret used to encrypt user API keys stored in Convex
-  - Set both variables in your Convex dashboard so they are available to all deployed functions.
+  - Set both variables in your Convex dashboard so they are available to all deployed functions. Users can store their personal OpenRouter key from the **Settings** dialog in the sidebar.
 
 ## Convex Setup
 

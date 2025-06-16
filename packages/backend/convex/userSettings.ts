@@ -1,6 +1,6 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 import { encryptApiKey } from "./apiKeyCipher";
 
@@ -38,9 +38,10 @@ export const hasApiKey = query({
  */
 export const saveApiKey = mutation({
   args: { apiKey: v.string() },
+  returns: v.null(),
   handler: async (ctx, { apiKey }) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Not authenticated");
+    if (!userId) throw new ConvexError("Not authenticated");
     const existing = await ctx.db
       .query("user_settings")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
@@ -49,7 +50,10 @@ export const saveApiKey = mutation({
       if (existing) {
         await ctx.db.delete(existing._id);
       }
-      return;
+      return null;
+    }
+    if (!apiKey.startsWith("sk-or-")) {
+      throw new ConvexError("invalid key");
     }
     const encrypted = await encryptApiKey(apiKey, SECRET);
     if (existing) {
@@ -57,5 +61,6 @@ export const saveApiKey = mutation({
     } else {
       await ctx.db.insert("user_settings", { userId, encryptedApiKey: encrypted });
     }
+    return null;
   },
 });
