@@ -1,5 +1,6 @@
 import Loader from "@/components/loader";
 import { LoginCard } from "@/components/login-card";
+import { HyperwaveLogoHorizontal } from "@/components/logo";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -10,6 +11,8 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
+
+import splashImage from "../assets/login-splash.png";
 
 import "../index.css";
 
@@ -72,13 +75,8 @@ function SignInLogin() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <a href="#" className="flex items-center gap-2 font-medium">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              Logo here
-            </div>
-            Hyperwave
-          </a>
+        <div className="flex justify-center gap-2 p-4 md:justify-start md:p-1">
+          <HyperwaveLogoHorizontal className="h-8 sm:h-12 md:h-12 w-auto shrink-0 text-primary" />
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">
@@ -88,9 +86,9 @@ function SignInLogin() {
       </div>
       <div className="bg-muted relative hidden lg:block">
         <img
-          src="/placeholder.svg"
+          src={splashImage}
           alt="Image"
-          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.6]"
         />
       </div>
     </div>

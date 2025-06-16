@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import {
@@ -352,6 +353,7 @@ export function ChatView({
       )
     : undefined;
   const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
+  const hasMessages = messageList.length > 0;
 
   const send = useAction(api.chatActions.sendMessage);
 
@@ -379,20 +381,32 @@ export function ChatView({
       <SidebarInset>
         <div className="flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
-          <main className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messageList.map((m) => (
-              <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
-                {m.role === "user" ? (
-                  <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
-                    {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                      <div key={index}>{renderPart(part)}</div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="w-full">{renderMessageParts(m.parts)}</div>
-                )}
-              </div>
-            ))}
+          <main
+            className={cn(
+              "flex-1 overflow-y-auto p-4",
+              hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+            )}
+          >
+            {hasMessages ? (
+              messageList.map((m) => (
+                <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
+                  {m.role === "user" ? (
+                    <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
+                      {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                        <div key={index}>{renderPart(part)}</div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="w-full">{renderMessageParts(m.parts)}</div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <>
+                <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
+                <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
+              </>
+            )}
           </main>
           <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
             <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
