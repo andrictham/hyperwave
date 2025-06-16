@@ -15,12 +15,17 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
+import {
+  optimisticallySendMessage,
+  toUIMessages,
+  useThreadMessages,
+  type UIMessage,
+} from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
-import { useAction, useMutation } from "convex/react";
+import { useMutation } from "convex/react";
 import { ArrowUp, Check, Loader2, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 /**
@@ -371,22 +376,38 @@ export function ChatView({
       inputRef.current.focus();
     }
   }, [threadId]);
-  const messagesQuery = threadId
+
+  // // TODO: Old implementation. To remove.
+  // const messages = threadId
+  //   ? useThreadMessages(
+  //       api.chat.listThreadMessages,
+  //       { threadId },
+  //       {
+  //         initialNumItems: 20,
+  //         stream: true,
+  //       },
+  //     )
+  //   : undefined;
+
+  const messages = threadId
     ? useThreadMessages(
         api.chat.listThreadMessages,
         { threadId },
-        {
-          initialNumItems: 20,
-          stream: true,
-        },
+        { initialNumItems: 20, stream: true },
       )
     : undefined;
-  const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
+
+  // TODO: Old implementation. To remove.
+  //  const sendMessage = useAction(api.chatActions.sendMessage);
+
+  const sendMessage = useMutation(api.chat.streamMessageAsynchronously).withOptimisticUpdate(
+    optimisticallySendMessage(api.chat.listThreadMessages),
+  );
+
+  const messageList: UIMessage[] = messages ? toUIMessages(messages.results ?? []) : [];
   const hasMessages = messageList.length > 0;
 
-  const send = useAction(api.chatActions.sendMessage);
-
-  const isStreaming = (messagesQuery as { streaming?: boolean } | undefined)?.streaming ?? false;
+  const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -394,7 +415,7 @@ export function ChatView({
     if (!text || !modelsLoaded || !model) return;
     setPrompt("");
     try {
-      const result = await send({ threadId, prompt: text, model });
+      const result = await sendMessage({ threadId, prompt: text, model });
       formRef.current?.reset();
       if (!threadId && onNewThread && result.threadId) {
         onNewThread(result.threadId);
