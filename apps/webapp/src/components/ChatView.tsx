@@ -412,13 +412,28 @@ export function ChatView({
                 className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
               />
               <div className="flex items-end justify-between">
-                <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+                <Popover
+                  open={modelMenuOpen}
+                  onOpenChange={(open) => {
+                    setModelMenuOpen(open);
+                    if (!open) {
+                      // Focus the textarea when the popover closes
+                      inputRef.current?.focus();
+                    }
+                  }}
+                >
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
                       {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="p-0 w-72">
+                  <PopoverContent
+                    className="p-0 w-72"
+                    onCloseAutoFocus={(e) => {
+                      e.preventDefault();
+                      inputRef.current?.focus();
+                    }}
+                  >
                     <div className="p-2 border-b">
                       <Input
                         value={modelFilter}
