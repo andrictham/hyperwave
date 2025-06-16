@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { useNavigate } from "@tanstack/react-router";
@@ -194,24 +195,89 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
     case "text":
       return <Markdown>{part.text}</Markdown>;
     case "reasoning":
-      return <pre className="text-xs opacity-70 whitespace-pre-wrap">{part.reasoning}</pre>;
+      return (
+        <div className="mb-2 prose p-2 bg-muted/50 rounded">
+          <div className="text-xs font-medium text-muted-foreground mb-1">Thinking</div>
+          <div className="text-xs text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
+        </div>
+      );
     case "tool-invocation":
       return (
-        <div className="text-xs border rounded p-2 bg-muted">
-          <div className="font-mono">{part.toolInvocation.toolName}</div>
-          <pre className="whitespace-pre-wrap">
-            {JSON.stringify(part.toolInvocation.args, null, 2)}
-          </pre>
-          {hasResult(part.toolInvocation) && (
-            <pre className="whitespace-pre-wrap mt-1">
-              {JSON.stringify(part.toolInvocation.result, null, 2)}
+        <div className="mb-2 border rounded p-2 bg-muted/50">
+          <div className="text-xs font-medium text-muted-foreground mb-1">
+            Using tool: <span className="font-mono">{part.toolInvocation.toolName}</span>
+          </div>
+          <div className="text-xs space-y-1">
+            <div className="font-medium">Arguments:</div>
+            <pre className="whitespace-pre-wrap bg-muted p-1 rounded">
+              {JSON.stringify(part.toolInvocation.args, null, 2)}
             </pre>
-          )}
+            {hasResult(part.toolInvocation) && (
+              <>
+                <div className="font-medium mt-1">Result:</div>
+                <pre className="whitespace-pre-wrap bg-muted p-1 rounded">
+                  {JSON.stringify(part.toolInvocation.result, null, 2)}
+                </pre>
+              </>
+            )}
+          </div>
         </div>
       );
     default:
       return null;
   }
+}
+
+// Define a type for the accumulator that maps part types to their corresponding arrays
+type PartsByType = {
+  reasoning: Extract<UIMessage["parts"][number], { type: "reasoning" }>[];
+  "tool-invocation": Extract<UIMessage["parts"][number], { type: "tool-invocation" }>[];
+  text: Extract<UIMessage["parts"][number], { type: "text" }>[];
+};
+
+/** Render all parts of a message in the correct order */
+function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
+  // Initialize the accumulator with empty arrays for each part type
+  const initialParts: PartsByType = {
+    reasoning: [],
+    "tool-invocation": [],
+    text: [],
+  };
+
+  // Group parts by type using a type-safe approach
+  const partsByType = parts.reduce<PartsByType>((acc, part) => {
+    switch (part.type) {
+      case "reasoning":
+        acc.reasoning.push(part);
+        break;
+      case "tool-invocation":
+        acc["tool-invocation"].push(part);
+        break;
+      case "text":
+        acc.text.push(part);
+        break;
+      // Other part types are intentionally ignored as they're not rendered
+    }
+    return acc;
+  }, initialParts);
+
+  // Render all parts in the desired order
+  return (
+    <>
+      {[...partsByType.reasoning, ...partsByType["tool-invocation"]].map((part, index) => (
+        <div key={index} className="mb-2">
+          {renderPart(part)}
+        </div>
+      ))}
+      {partsByType.text.length > 0 && (
+        <div className="mt-2">
+          {partsByType.text.map((part, index) => (
+            <div key={index}>{renderPart(part)}</div>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 /**
@@ -285,13 +351,16 @@ export function ChatView({
           <ThreadHeader threadId={threadId} />
           <main className="flex-1 overflow-y-auto p-4 space-y-4">
             {messageList.map((m) => (
-              <div key={m.key} className="space-y-1">
-                <div className="font-semibold capitalize">{m.role}</div>
-                <div className="flex flex-col gap-1">
-                  {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                    <div key={index}>{renderPart(part)}</div>
-                  ))}
-                </div>
+              <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
+                {m.role === "user" ? (
+                  <div className="bg-secondary text-secondary-foreground rounded-xl px-4 py-2 shadow max-w-[70%] min-w-[10rem] w-fit">
+                    {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                      <div key={index}>{renderPart(part)}</div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="w-full">{renderMessageParts(m.parts)}</div>
+                )}
               </div>
             ))}
           </main>
