@@ -21,6 +21,7 @@ import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useAction, useQuery } from "convex/react";
 import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { useAutoscroll } from "../hooks/use-autoscroll";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -355,9 +356,18 @@ export function ChatView({
   const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
   const hasMessages = messageList.length > 0;
 
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const autoScroll = useAutoscroll(messageListRef);
+
   const send = useAction(api.chatActions.sendMessage);
 
   const isStreaming = (messagesQuery as { streaming?: boolean } | undefined)?.streaming ?? false;
+
+  useEffect(() => {
+    if (autoScroll && messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  }, [autoScroll, messageList, isStreaming]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -382,6 +392,7 @@ export function ChatView({
         <div className="flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
           <main
+            ref={messageListRef}
             className={cn(
               "flex-1 overflow-y-auto p-4",
               hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
