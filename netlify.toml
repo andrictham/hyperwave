@@ -1,0 +1,5 @@
+# Redirect all client-side routes to index.html
+[[redirects]]
+  from = "/*"
+  to   = "/index.html"
+  status = 200

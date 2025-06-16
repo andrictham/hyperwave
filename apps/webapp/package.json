@@ -22,10 +22,6 @@
     "vite": "^6.3.5"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^1.3.22",
-    "@assistant-ui/react": "^0.10.23",
-    "@assistant-ui/react-ai-sdk": "^0.10.13",
-    "@assistant-ui/react-markdown": "^0.10.4",
     "@convex-dev/agent": "^0.1.8",
     "@convex-dev/auth": "^0.0.87",
     "@hookform/resolvers": "^3.10.0",
@@ -42,7 +38,6 @@
     "@tailwindcss/vite": "^4.1.10",
     "@tanstack/react-form": "^1.12.2",
     "@tanstack/react-router": "^1.121.2",
-    "ai": "^4.3.16",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.24.8",
@@ -51,7 +46,7 @@
     "radix-ui": "^1.4.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "remark-gfm": "^4.0.1",
+    "react-textarea-autosize": "^8.5.9",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tw-animate-css": "^1.3.4",

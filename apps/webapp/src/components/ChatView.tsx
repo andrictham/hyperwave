@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,8 +14,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
+import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useAction, useQuery } from "convex/react";
 import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
@@ -194,24 +197,89 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
     case "text":
       return <Markdown>{part.text}</Markdown>;
     case "reasoning":
-      return <pre className="text-xs opacity-70 whitespace-pre-wrap">{part.reasoning}</pre>;
+      return (
+        <div className="mb-2 prose p-2 bg-muted/50 rounded">
+          <div className="text-xs font-medium text-muted-foreground mb-1">Thinking</div>
+          <div className="text-xs text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
+        </div>
+      );
     case "tool-invocation":
       return (
-        <div className="text-xs border rounded p-2 bg-muted">
-          <div className="font-mono">{part.toolInvocation.toolName}</div>
-          <pre className="whitespace-pre-wrap">
-            {JSON.stringify(part.toolInvocation.args, null, 2)}
-          </pre>
-          {hasResult(part.toolInvocation) && (
-            <pre className="whitespace-pre-wrap mt-1">
-              {JSON.stringify(part.toolInvocation.result, null, 2)}
+        <div className="mb-2 border rounded p-2 bg-muted/50">
+          <div className="text-xs font-medium text-muted-foreground mb-1">
+            Using tool: <span className="font-mono">{part.toolInvocation.toolName}</span>
+          </div>
+          <div className="text-xs space-y-1">
+            <div className="font-medium">Arguments:</div>
+            <pre className="whitespace-pre-wrap bg-muted p-1 rounded">
+              {JSON.stringify(part.toolInvocation.args, null, 2)}
             </pre>
-          )}
+            {hasResult(part.toolInvocation) && (
+              <>
+                <div className="font-medium mt-1">Result:</div>
+                <pre className="whitespace-pre-wrap bg-muted p-1 rounded">
+                  {JSON.stringify(part.toolInvocation.result, null, 2)}
+                </pre>
+              </>
+            )}
+          </div>
         </div>
       );
     default:
       return null;
   }
+}
+
+// Define a type for the accumulator that maps part types to their corresponding arrays
+type PartsByType = {
+  reasoning: Extract<UIMessage["parts"][number], { type: "reasoning" }>[];
+  "tool-invocation": Extract<UIMessage["parts"][number], { type: "tool-invocation" }>[];
+  text: Extract<UIMessage["parts"][number], { type: "text" }>[];
+};
+
+/** Render all parts of a message in the correct order */
+function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
+  // Initialize the accumulator with empty arrays for each part type
+  const initialParts: PartsByType = {
+    reasoning: [],
+    "tool-invocation": [],
+    text: [],
+  };
+
+  // Group parts by type using a type-safe approach
+  const partsByType = parts.reduce<PartsByType>((acc, part) => {
+    switch (part.type) {
+      case "reasoning":
+        acc.reasoning.push(part);
+        break;
+      case "tool-invocation":
+        acc["tool-invocation"].push(part);
+        break;
+      case "text":
+        acc.text.push(part);
+        break;
+      // Other part types are intentionally ignored as they're not rendered
+    }
+    return acc;
+  }, initialParts);
+
+  // Render all parts in the desired order
+  return (
+    <>
+      {[...partsByType.reasoning, ...partsByType["tool-invocation"]].map((part, index) => (
+        <div key={index} className="mb-2">
+          {renderPart(part)}
+        </div>
+      ))}
+      {partsByType.text.length > 0 && (
+        <div className="mt-2">
+          {partsByType.text.map((part, index) => (
+            <div key={index}>{renderPart(part)}</div>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 /**
@@ -231,12 +299,42 @@ export function ChatView({
   const modelsLoaded = modelsConfig !== undefined;
   const [model, setModel] = useState<string>();
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [modelFilter, setModelFilter] = useState("");
+  const [activeModelIndex, setActiveModelIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useEffect(() => {
     if (modelsConfig && !model) {
       setModel(modelsConfig.defaultModel);
     }
   }, [modelsConfig, model]);
+
+  const filteredModels = useMemo(() => {
+    if (!modelsConfig) return [] as ModelInfo[];
+    const query = modelFilter.toLowerCase();
+    const base: ModelInfo[] = modelsConfig.models.filter(
+      (m) => m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query),
+    );
+    const selected: ModelInfo | undefined = modelsConfig.models.find((m) => m.id === model);
+    if (selected && !base.some((m) => m.id === selected.id)) {
+      base.unshift(selected);
+    }
+    return base;
+  }, [modelsConfig, modelFilter, model]);
+
+  useEffect(() => {
+    setActiveModelIndex(0);
+  }, [modelFilter, modelMenuOpen, filteredModels.length]);
+
+  useEffect(() => {
+    const target = itemRefs.current[activeModelIndex];
+    if (target) {
+      target.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeModelIndex, filteredModels]);
+
+  const selectedModelInfo: ModelInfo | undefined = modelsConfig?.models.find((m) => m.id === model);
 
   // Focus the input when it's a new chat or when the component mounts
   useEffect(() => {
@@ -255,6 +353,7 @@ export function ChatView({
       )
     : undefined;
   const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
+  const hasMessages = messageList.length > 0;
 
   const send = useAction(api.chatActions.sendMessage);
 
@@ -264,10 +363,15 @@ export function ChatView({
     e.preventDefault();
     const text = prompt.trim();
     if (!text || !modelsLoaded || !model) return;
-    const result = await send({ threadId, prompt: text, model });
     setPrompt("");
-    if (!threadId && onNewThread && result.threadId) {
-      onNewThread(result.threadId);
+    try {
+      const result = await send({ threadId, prompt: text, model });
+      formRef.current?.reset();
+      if (!threadId && onNewThread && result.threadId) {
+        onNewThread(result.threadId);
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error);
     }
   };
 
@@ -277,49 +381,115 @@ export function ChatView({
       <SidebarInset>
         <div className="flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
-          <main className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messageList.map((m) => (
-              <div key={m.key} className="space-y-1">
-                <div className="font-semibold capitalize">{m.role}</div>
-                <div className="flex flex-col gap-1">
-                  {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                    <div key={index}>{renderPart(part)}</div>
-                  ))}
+          <main
+            className={cn(
+              "flex-1 overflow-y-auto p-4",
+              hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+            )}
+          >
+            {hasMessages &&
+              messageList.map((m) => (
+                <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
+                  {m.role === "user" ? (
+                    <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
+                      {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                        <div key={index}>{renderPart(part)}</div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="w-full">{renderMessageParts(m.parts)}</div>
+                  )}
                 </div>
-              </div>
-            ))}
+              ))}
+            {!threadId && (
+              <>
+                <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
+                <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
+              </>
+            )}
           </main>
-          <form onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
+          <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
             <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
               <Textarea
                 ref={inputRef}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    formRef.current?.requestSubmit();
+                  }
+                }}
                 minRows={3}
                 maxRows={6}
                 placeholder="Type a message..."
                 className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
               />
               <div className="flex items-end justify-between">
-                <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+                <Popover
+                  open={modelMenuOpen}
+                  onOpenChange={(open) => {
+                    setModelMenuOpen(open);
+                    if (!open) {
+                      // Focus the textarea when the popover closes
+                      inputRef.current?.focus();
+                    }
+                  }}
+                >
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
-                      {modelsLoaded ? model : "Loading..."}
+                      {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="p-0">
-                    <div className="flex flex-col">
-                      {modelsConfig?.models.map((m) => (
+                  <PopoverContent
+                    className="p-0 w-72"
+                    onCloseAutoFocus={(e) => {
+                      e.preventDefault();
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    <div className="p-2 border-b">
+                      <Input
+                        value={modelFilter}
+                        onChange={(e) => setModelFilter(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setActiveModelIndex((i) => Math.min(i + 1, filteredModels.length - 1));
+                          } else if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setActiveModelIndex((i) => Math.max(i - 1, 0));
+                          } else if (e.key === "Enter") {
+                            e.preventDefault();
+                            const m = filteredModels[activeModelIndex];
+                            if (m) {
+                              setModel(m.id);
+                              setModelMenuOpen(false);
+                            }
+                          }
+                        }}
+                        placeholder="Search models..."
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="max-h-64 overflow-y-auto py-1">
+                      {filteredModels.map((m: ModelInfo, idx: number) => (
                         <button
-                          key={m}
+                          key={m.id}
+                          ref={(el) => {
+                            itemRefs.current[idx] = el;
+                          }}
                           type="button"
                           onClick={() => {
-                            setModel(m);
+                            setModel(m.id);
                             setModelMenuOpen(false);
                           }}
-                          className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
+                          className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${
+                            idx === activeModelIndex ? "bg-accent text-accent-foreground" : ""
+                          } ${m.id === model ? "font-semibold" : ""}`}
                         >
-                          {m}
+                          <span>{m.name}</span>
+                          {m.id === model && <Check className="w-4 h-4" />}
                         </button>
                       ))}
                     </div>
