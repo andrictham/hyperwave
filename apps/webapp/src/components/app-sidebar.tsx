@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { Link } from "@tanstack/react-router";
-import { useAction, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
@@ -37,8 +37,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const healthCheck = useQuery(api.healthCheck?.get);
   const threads = useQuery(api.chat.listThreads) ?? [];
   const user = useQuery(api.auth.me);
-  const deleteThread = useAction(api.chatActions.deleteThread);
-  const updateThread = useAction(api.chatActions.updateThread);
+  const deleteThread = useMutation(api.chatActions.deleteThread).withOptimisticUpdate(
+    (store, { threadId }) => {
+      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+        if (!value) continue;
+        store.setQuery(
+          api.chat.listThreads,
+          args,
+          value.filter((t) => t._id !== threadId),
+        );
+      }
+      store.setQuery(api.chat.getThread, { threadId }, undefined);
+    },
+  );
+  const updateThread = useMutation(api.chatActions.updateThread).withOptimisticUpdate(
+    (store, { threadId, title }) => {
+      if (!title) return;
+      const current = store.getQuery(api.chat.getThread, { threadId });
+      if (current) {
+        store.setQuery(api.chat.getThread, { threadId }, { ...current, title });
+      }
+      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+        if (!value) continue;
+        store.setQuery(
+          api.chat.listThreads,
+          args,
+          value.map((t) => (t._id === threadId ? { ...t, title } : t)),
+        );
+      }
+    },
+  );
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [newThreadTitle, setNewThreadTitle] = useState("");
   const { isMobile } = useSidebar();
