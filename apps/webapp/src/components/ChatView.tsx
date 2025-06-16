@@ -355,6 +355,28 @@ export function ChatView({
   const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
   const hasMessages = messageList.length > 0;
 
+  const mainRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+
+  useEffect(() => {
+    const container = mainRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      const atBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight <= 1;
+      setAutoScroll(atBottom);
+    };
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (autoScroll && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ block: "end" });
+    }
+  }, [messageList.length, autoScroll]);
+
   const send = useAction(api.chatActions.sendMessage);
 
   const isStreaming = (messagesQuery as { streaming?: boolean } | undefined)?.streaming ?? false;
@@ -382,6 +404,7 @@ export function ChatView({
         <div className="flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
           <main
+            ref={mainRef}
             className={cn(
               "flex-1 overflow-y-auto p-4",
               hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
@@ -407,6 +430,7 @@ export function ChatView({
                 <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
               </>
             )}
+            <div ref={bottomRef} />
           </main>
           <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
             <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
