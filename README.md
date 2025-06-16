@@ -46,6 +46,15 @@ There are two .env files used in this project that you must specify when working
   - `ENCRYPTION_SECRET` - 32 byte secret used to encrypt user API keys stored in Convex
   - Set both variables in your Convex dashboard so they are available to all deployed functions. Users can store their personal OpenRouter key from the **Settings** dialog in the sidebar.
 
+You can generate and upload a random encryption secret using the helper script:
+
+```bash
+pnpm set:encryption-secret
+```
+
+This creates a new 32‑byte secret and configures it in your Convex project via
+`convex env set`.
+
 ## Convex Setup
 
 This project uses Convex as a backend. You'll need to set up Convex before running the app:
