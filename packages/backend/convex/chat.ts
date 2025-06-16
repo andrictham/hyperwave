@@ -1,11 +1,19 @@
 import { vMessageDoc, vStreamArgs, vThreadDoc } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
-import { components, internal } from "./_generated/api";
+import { api, components, internal } from "./_generated/api";
 import { internalAction, mutation, query } from "./_generated/server";
-import agent from "./agent";
+import agent, { openrouter } from "./agent";
+import { allowedModels, defaultModel } from "./models";
 import { requireOwnThread, requireUserId } from "./threadOwnership";
+
+/**
+ * Type guard ensuring a value is part of the `allowedModels` whitelist.
+ */
+function isAllowedModel(value: string): value is (typeof allowedModels)[number]["id"] {
+  return allowedModels.some((m) => m.id === value);
+}
 
 ///////////////////////////////////////////////////
 //                                               //
@@ -20,10 +28,12 @@ import { requireOwnThread, requireUserId } from "./threadOwnership";
  * Create a new thread
  */
 export const createThread = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await requireUserId(ctx);
-    const { threadId } = await agent.createThread(ctx, { userId });
+  args: {
+    userId: v.optional(v.string()),
+  },
+  handler: async (ctx, { userId }) => {
+    const useUserId = userId || (await requireUserId(ctx));
+    const { threadId } = await agent.createThread(ctx, { userId: useUserId });
     return threadId;
   },
 });
@@ -33,28 +43,51 @@ export const createThread = mutation({
  * generate the stream response.
  */
 export const streamMessageAsynchronously = mutation({
-  args: { prompt: v.string(), threadId: v.string() },
-  handler: async (ctx, { prompt, threadId }) => {
-    await requireOwnThread(ctx, threadId);
-    const { messageId } = await agent.saveMessage(ctx, {
-      threadId,
-      prompt,
-      // we're in a mutation, so skip embeddings for now. They'll be generated
-      // lazily when streaming text.
-      skipEmbeddings: true,
-    });
-    await ctx.scheduler.runAfter(0, internal.chat.streamMessage, {
-      threadId,
-      promptMessageId: messageId,
-    });
+  args: {
+    prompt: v.string(),
+    threadId: v.optional(v.string()),
+    model: v.optional(v.string()),
+  },
+  handler: async (ctx, { prompt, threadId, model }) => {
+    const userId = await requireUserId(ctx);
+
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+
+    // TODO: if no threadId then create one
+
+    if (threadId) {
+      await requireOwnThread(ctx, threadId);
+
+      const { messageId } = await agent.saveMessage(ctx, {
+        threadId,
+        prompt,
+        // we're in a mutation, so skip embeddings for now. They'll be generated
+        // lazily when streaming text.
+        skipEmbeddings: true,
+      });
+      await ctx.scheduler.runAfter(0, internal.chat.streamMessage, {
+        threadId,
+        promptMessageId: messageId,
+        model,
+      });
+      // TODO: Schedule `maybeUpdateThreadTitle` to run as well
+
+      return { threadId };
+    }
   },
 });
 
 export const streamMessage = internalAction({
-  args: { promptMessageId: v.string(), threadId: v.string() },
-  handler: async (ctx, { promptMessageId, threadId }) => {
+  args: { promptMessageId: v.string(), threadId: v.string(), model: v.optional(v.string()) },
+  handler: async (ctx, { promptMessageId, threadId, model }) => {
     const { thread } = await agent.continueThread(ctx, { threadId });
-    const result = await thread.streamText({ promptMessageId }, { saveStreamDeltas: true });
+    const modelId = model && isAllowedModel(model) ? model : defaultModel;
+    const result = await thread.streamText(
+      { promptMessageId, model: openrouter.chat(modelId) },
+      { saveStreamDeltas: true },
+    );
     await result.consumeStream();
   },
 });
