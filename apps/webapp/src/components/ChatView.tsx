@@ -387,7 +387,7 @@ export function ChatView({
               hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
             )}
           >
-            {hasMessages ? (
+            {hasMessages &&
               messageList.map((m) => (
                 <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
                   {m.role === "user" ? (
@@ -400,8 +400,8 @@ export function ChatView({
                     <div className="w-full">{renderMessageParts(m.parts)}</div>
                   )}
                 </div>
-              ))
-            ) : (
+              ))}
+            {!threadId && (
               <>
                 <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
                 <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
