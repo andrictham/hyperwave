@@ -19,6 +19,10 @@ import splashImage from "../assets/login-splash.png";
 
 import "../index.css";
 
+/**
+ * Search parameters available on the root route.
+ * The `model` parameter tracks the selected LLM model.
+ */
 const searchSchema = z.object({
   model: z.string().optional(),
 });
