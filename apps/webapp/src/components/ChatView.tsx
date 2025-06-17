@@ -15,6 +15,11 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
@@ -311,6 +316,45 @@ function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
   );
 }
 
+/** Render an assistant message with streaming states */
+function AssistantMessage({ message }: { message: UIMessage }) {
+  const [open, setOpen] = useState(false);
+  const hasText = message.parts.some((p) => p.type === "text");
+  const reasoningParts = message.parts.filter(
+    (p): p is Extract<UIMessage["parts"][number], { type: "reasoning" }> =>
+      p.type === "reasoning",
+  );
+  const nonReasoningParts = message.parts.filter((p) => p.type !== "reasoning");
+
+  const streamingState = message.status === "streaming" ? (hasText ? 2 : 1) : 3;
+
+  return (
+    <div className="w-full space-y-2">
+      {streamingState === 1 && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Reasoning…</span>
+        </div>
+      )}
+      {nonReasoningParts.map((part, idx) => (
+        <div key={idx}>{renderPart(part)}</div>
+      ))}
+      {streamingState === 3 && reasoningParts.length > 0 && (
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <CollapsibleTrigger className="text-xs text-muted-foreground underline">
+            {open ? "Hide reasoning" : "Show reasoning"}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-1 space-y-2">
+            {reasoningParts.map((part, idx) => (
+              <div key={idx}>{renderPart(part)}</div>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </div>
+  );
+}
+
 /**
  * Primary chat view showing the list of messages for a thread and a form to
  * compose new messages. A model can be selected per message via a popover
@@ -387,6 +431,10 @@ export function ChatView({
   const send = useAction(api.chatActions.sendMessage);
 
   const isStreaming = (messagesQuery as { streaming?: boolean } | undefined)?.streaming ?? false;
+  const hasStreamingAssistant = messageList.some(
+    (m) => m.role === "assistant" && m.status === "streaming",
+  );
+  const showResponding = isStreaming && !hasStreamingAssistant;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -418,18 +466,29 @@ export function ChatView({
           >
             {hasMessages &&
               messageList.map((m) => (
-                <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
+                <div
+                  key={m.key}
+                  className={cn("flex w-full", m.role === "user" && "justify-end")}
+                >
                   {m.role === "user" ? (
                     <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
                       {m.parts.map((part: UIMessage["parts"][number], index: number) => (
                         <div key={index}>{renderPart(part)}</div>
                       ))}
                     </div>
+                  ) : m.role === "assistant" ? (
+                    <AssistantMessage message={m} />
                   ) : (
                     <div className="w-full">{renderMessageParts(m.parts)}</div>
                   )}
                 </div>
               ))}
+            {showResponding && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Responding…</span>
+              </div>
+            )}
             {!threadId && (
               <>
                 <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
