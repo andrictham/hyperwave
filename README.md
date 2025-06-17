@@ -54,6 +54,10 @@ pnpm set:encryption-secret
 This creates a new base64url-encoded 32‑byte secret and configures it in your Convex project via
 `convex env set`.
 
+Users can optionally provide their own OpenRouter API key from the **Settings**
+dialog in the sidebar. Keys must start with `sk-or-` and are encrypted on the
+server using the `ENCRYPTION_SECRET` before storage.
+
 ## Convex Setup
 
 This project uses Convex as a backend. You'll need to set up Convex before running the app:

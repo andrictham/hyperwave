@@ -72,7 +72,7 @@ export function OpenRouterKeyDialog({ open, onOpenChange }: Props) {
             placeholder="sk-or-..."
           />
           {error && <p className="text-sm text-red-600">{error}</p>}
-          <DialogFooter className="flex gap-2">
+          <DialogFooter className="mt-4 flex gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

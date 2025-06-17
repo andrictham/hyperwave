@@ -1,6 +1,41 @@
-import { vMessageDoc, vStreamArgs, vThreadDoc } from "@convex-dev/agent";
+import { Thread, vMessageDoc, vStreamArgs, vThreadDoc } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
-import { ConvexError, v } from "convex/values";
+import { ActionCtx, action, query } from "./_generated/server";
+import agent, { createProvider } from "./agent";
+import { decryptApiKey } from "./apiKeyCipher";
+import { allowedModels, defaultModel } from "./models";
+/** Type guard ensuring a value is part of the `allowedModels` whitelist. */
+function isAllowedModel(value: string): value is (typeof allowedModels)[number] {
+  return allowedModels.includes(value as (typeof allowedModels)[number]);
+}
+
+/**
+ * Updates the thread title if it's missing or generic.
+ * @param thread - The thread to potentially update
+ * @param ctx - The Convex context
+ */
+async function maybeUpdateThreadTitle(thread: Thread<unknown>, ctx: ActionCtx) {
+  const threadData = await ctx.runQuery(components.agent.threads.getThread, {
+    threadId: thread.threadId,
+  });
+  const existingTitle = threadData?.title;
+
+  if (!existingTitle || existingTitle === "Untitled") {
+    const { text } = await thread.generateText(
+      {
+        prompt:
+          "Reply ONLY with a short, concise title for this conversation of maximum 5 words or 40 characters. SAY NOTHING ELSE.",
+      },
+      { storageOptions: { saveMessages: "none" } },
+    );
+    if (text) {
+      await ctx.runMutation(components.agent.threads.updateThread, {
+        threadId: thread.threadId,
+        patch: { title: text },
+      });
+    }
+  }
+}
 
 import { api, components, internal } from "./_generated/api";
 import { internalAction, mutation, query } from "./_generated/server";
@@ -33,6 +68,58 @@ export const createThread = mutation({
   },
   handler: async (ctx, { userId }) => {
     const useUserId = userId || (await requireUserId(ctx));
+
+/**
+ * Stream a user message to the specified thread, creating the thread if
+ * necessary. The resulting text is emitted incrementally and persisted to the
+ * database. The user's personal API key is used when provided.
+ */
+export const streamMessage = action({
+  args: {
+    threadId: v.optional(v.string()),
+    prompt: v.string(),
+    model: v.optional(v.string()),
+  },
+  returns: v.object({ threadId: v.string() }),
+  handler: async (ctx, { threadId, prompt, model }) => {
+    const userId = await requireUserId(ctx);
+    if (threadId) {
+      await requireOwnThread(ctx, threadId);
+    }
+
+    let useThreadId = threadId;
+    if (!useThreadId) {
+      const created = await agent.createThread(ctx, { userId });
+      useThreadId = created.threadId;
+    }
+
+    const { thread } = await agent.continueThread(ctx, {
+      threadId: useThreadId,
+    });
+
+    const record = await ctx.db
+      .query("user_settings")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    const apiKey = record
+      ? await decryptApiKey(
+          record.encryptedApiKey,
+          process.env.ENCRYPTION_SECRET ?? "",
+        )
+      : process.env.OPENROUTER_API_KEY ?? "";
+    const provider = createProvider(apiKey);
+    const modelId = model && isAllowedModel(model) ? model : defaultModel;
+
+    await thread.streamText(
+      { prompt, model: provider.chat(modelId) },
+      { saveStreamDeltas: true },
+    );
+
+    await maybeUpdateThreadTitle(thread, ctx);
+
+    return { threadId: useThreadId };
+  },
+});
     const { threadId } = await agent.createThread(ctx, { userId: useUserId });
     return threadId;
   },
