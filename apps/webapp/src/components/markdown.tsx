@@ -4,6 +4,7 @@ import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { getSingletonHighlighter, type Highlighter } from "shiki";
 import nord from "shiki/themes/nord.mjs";
+import { Clipboard, Check } from "lucide-react";
 
 /** Props for the Markdown component. */
 export interface MarkdownProps {
@@ -42,30 +43,59 @@ export function Markdown({ children }: MarkdownProps) {
     children?: React.ReactNode;
   }
 
-  const components = React.useMemo<Components>(() => {
-    return {
-      code({ node: _node, inline, className, children: codeChildren }: CodeProps) {
-        const code = String(codeChildren ?? "").replace(/\n$/, "");
-        const langMatch = /language-(\w+)/.exec(className || "");
-        if (!inline && langMatch && highlighter) {
-          const lang = langMatch[1];
-          const loaded = highlighter.getLoadedLanguages();
-          const langToUse = loaded.includes(lang) ? lang : "txt";
+  const CodeBlock = ({ inline, className, children }: CodeProps) => {
+    const [copied, setCopied] = React.useState(false);
+    const code = String(children ?? "").replace(/\n$/, "");
+    const langMatch = /language-(\w+)/.exec(className || "");
+
+    if (!inline && langMatch && highlighter) {
+      const lang = langMatch[1];
+      const loaded = highlighter.getLoadedLanguages();
+      const langToUse = loaded.includes(lang) ? lang : "txt";
+      const html = highlighter.codeToHtml(code, { lang: langToUse, theme: "nord" });
+
+      if (typeof window !== "undefined") {
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const pre = doc.querySelector("pre");
+        if (pre) {
+          const style = pre.getAttribute("style") ?? "";
+          const styleObj: React.CSSProperties = {};
+          for (const part of style.split(";")) {
+            const [prop, value] = part.split(":");
+            if (prop && value) {
+              const key = prop.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+              (styleObj as any)[key] = value.trim();
+            }
+          }
+
+          const handleCopy = () => {
+            void navigator.clipboard.writeText(code).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 3000);
+            });
+          };
+
           return (
-            <div
-              dangerouslySetInnerHTML={{
-                __html: highlighter.codeToHtml(code, {
-                  lang: langToUse,
-                  theme: "nord",
-                }),
-              }}
-            />
+            <div className="relative group">
+              <pre className={pre.className} style={styleObj} dangerouslySetInnerHTML={{ __html: pre.innerHTML }} />
+              <button
+                type="button"
+                onClick={handleCopy}
+                aria-label="Copy code"
+                className="absolute right-2 top-2 rounded p-1 text-secondary-foreground opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                {copied ? <Check className="h-4 w-4 text-accent-foreground" /> : <Clipboard className="h-4 w-4" />}
+              </button>
+            </div>
           );
         }
-        return <code className={className}>{codeChildren}</code>;
-      },
-    };
-  }, [highlighter]);
+      }
+    }
+
+    return <code className={className}>{children}</code>;
+  };
+
+  const components = React.useMemo<Components>(() => ({ code: CodeBlock }), [highlighter]);
 
   return (
     <div className="prose dark:prose-invert mx-auto">

@@ -496,7 +496,7 @@ export function ChatView({
           <main
             ref={scrollRef}
             className={cn(
-              "relative flex-1 overflow-y-auto p-4",
+              "relative flex-1 overflow-y-auto p-4 mx-auto w-full max-w-screen-md",
               hasMessages ? undefined : "flex flex-col items-center justify-center",
             )}
           >
@@ -542,7 +542,7 @@ export function ChatView({
               <span className="sr-only">Scroll to bottom</span>
             </button>
           )}
-          <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
+          <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6 mx-auto w-full max-w-screen-md">
             <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
               <Textarea
                 ref={inputRef}
