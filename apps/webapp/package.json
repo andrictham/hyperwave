@@ -52,6 +52,7 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tw-animate-css": "^1.3.4",
+    "use-stick-to-bottom": "^1.1.1",
     "vaul": "^1.1.2",
     "zod": "^3.25.63"
   }
