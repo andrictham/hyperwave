@@ -4,6 +4,8 @@ import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { getSingletonHighlighter, type Highlighter } from "shiki";
 import nord from "shiki/themes/nord.mjs";
+import { CopyButton } from "@/components/copy-button";
+import { cn } from "@/lib/utils";
 
 /** Props for the Markdown component. */
 export interface MarkdownProps {
@@ -43,6 +45,19 @@ export function Markdown({ children }: MarkdownProps) {
   }
 
   const components = React.useMemo<Components>(() => {
+    /** Convert a CSS style string into a React `style` object. */
+    function styleStringToObject(style?: string): React.CSSProperties {
+      if (!style) return {};
+      return style.split(";").reduce<React.CSSProperties>((acc, decl) => {
+        const [prop, value] = decl.split(":");
+        if (prop && value) {
+          const key = prop.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+          acc[key as keyof React.CSSProperties] = value.trim();
+        }
+        return acc;
+      }, {});
+    }
+
     return {
       code({ node: _node, inline, className, children: codeChildren }: CodeProps) {
         const code = String(codeChildren ?? "").replace(/\n$/, "");
@@ -51,24 +66,33 @@ export function Markdown({ children }: MarkdownProps) {
           const lang = langMatch[1];
           const loaded = highlighter.getLoadedLanguages();
           const langToUse = loaded.includes(lang) ? lang : "txt";
+          const html = highlighter.codeToHtml(code, { lang: langToUse, theme: "nord" });
+          const classMatch = /class="([^"]*)"/.exec(html);
+          const styleMatch = /style="([^"]*)"/.exec(html);
+          const inner = html.replace(/^<pre[^>]*>/, "").replace(/<\/pre>$/, "");
           return (
-            <div
-              dangerouslySetInnerHTML={{
-                __html: highlighter.codeToHtml(code, {
-                  lang: langToUse,
-                  theme: "nord",
-                }),
-              }}
-            />
+            <pre className={cn(classMatch?.[1], "relative group overflow-auto rounded-md p-2")}
+                 style={styleStringToObject(styleMatch?.[1])}
+            >
+              <CopyButton text={code} />
+              <code dangerouslySetInnerHTML={{ __html: inner }} />
+            </pre>
           );
         }
         return <code className={className}>{codeChildren}</code>;
+      },
+      table({ children }) {
+        return (
+          <div className="overflow-x-auto">
+            <table>{children}</table>
+          </div>
+        );
       },
     };
   }, [highlighter]);
 
   return (
-    <div className="prose dark:prose-invert mx-auto">
+    <div className="prose dark:prose-invert w-full max-w-none sm:max-w-prose mx-auto">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {children}
       </ReactMarkdown>
