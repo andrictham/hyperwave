@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,7 @@ import {
   ArrowDownCircle,
   ArrowUp,
   Check,
+  ChevronDown,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -329,6 +331,48 @@ function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
 }
 
 /**
+ * Display an assistant message with streaming behaviour.
+ */
+function AssistantMessageView({ message }: { message: UIMessage }) {
+  const [open, setOpen] = useState(false);
+  const isStreaming = message.status === "streaming";
+  const textParts = message.parts.filter((p) => p.type === "text");
+  const reasoningParts = message.parts.filter((p) => p.type === "reasoning");
+  const otherParts = message.parts.filter((p) => p.type !== "reasoning");
+  const hasText = textParts.length > 0;
+
+  if (isStreaming && !hasText) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Reasoning…</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      {renderMessageParts(otherParts)}
+      {!isStreaming && reasoningParts.length > 0 && (
+        <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
+          <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground">
+            <ChevronDown
+              className={cn("h-4 w-4 transition-transform", open ? "rotate-180" : undefined)}
+            />
+            <span>{open ? "Hide reasoning" : "Show reasoning"}</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-1 space-y-2">
+            {reasoningParts.map((p, idx) => (
+              <div key={`reasoning-${idx}`}>{renderPart(p)}</div>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </div>
+  );
+}
+
+/**
  * Primary chat view showing the list of messages for a thread and a form to
  * compose new messages. A model can be selected per message via a popover
  * menu.
@@ -527,7 +571,9 @@ export function ChatView({
                         ))}
                       </div>
                     ) : (
-                      <div className="w-full">{renderMessageParts(m.parts)}</div>
+                      <div className="w-full">
+                        <AssistantMessageView message={m} />
+                      </div>
                     )}
                   </div>
                 ))}
