@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
@@ -252,9 +252,8 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
     }
     case "reasoning":
       return (
-        <div className="mb-2 prose p-2 bg-muted/50 rounded">
-          <div className="text-xs font-medium text-muted-foreground mb-1">Thinking</div>
-          <div className="text-xs text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
+        <div className="mb-2 prose p-4 bg-muted/80 rounded-lg">
+          <div className="text-md text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
         </div>
       );
     case "tool-invocation":
@@ -345,9 +344,10 @@ function AssistantMessage({ message }: { message: UIMessage }): JSX.Element {
   const others = message.parts.filter((p) => p.type !== "reasoning");
 
   if (isStreaming && !hasText) {
+    // if (true) {
     return (
-      <div className="w-full">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="prose">
+        <div className="flex items-center gap-2 text-md text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Reasoning…</span>
         </div>
@@ -360,11 +360,11 @@ function AssistantMessage({ message }: { message: UIMessage }): JSX.Element {
       {renderMessageParts(others)}
       {!isStreaming && reasoning.length > 0 && (
         <details
-          className="mt-2"
+          className="prose"
           open={open}
           onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
         >
-          <summary className="cursor-pointer text-xs text-muted-foreground select-none">
+          <summary className="rounded-lg p-4 text-sm text-accent-foreground/80 bg-accent/100 dark:bg-accent/20 hover:opacity-85 active:opacity-75 transition-all duration-200 ease-in-out select-none cursor-pointer">
             {open ? "Hide reasoning" : "Show reasoning"}
           </summary>
           <div className="mt-1">{renderMessageParts(reasoning)}</div>
