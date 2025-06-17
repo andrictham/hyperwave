@@ -99,28 +99,29 @@ export function Markdown({ children }: MarkdownProps) {
             theme: "nord",
           });
 
-          if (typeof window !== "undefined") {
-            const doc = new window.DOMParser().parseFromString(html, "text/html");
-            const pre = doc.querySelector("pre");
-            if (pre) {
-              const cls = pre.className;
-              const styleAttr = pre.getAttribute("style") ?? undefined;
-              const tabIndexAttr = pre.getAttribute("tabindex");
-              const tabIndex = tabIndexAttr ? Number(tabIndexAttr) : undefined;
-              const innerHtml = pre.innerHTML;
-              return (
-                <pre
-                  className={cn(cls, "relative")}
-                  style={styleAttr ? parseStyle(styleAttr) : undefined}
-                  tabIndex={tabIndex}
-                >
-                  <CopyButton code={code} />
-                  <code dangerouslySetInnerHTML={{ __html: innerHtml }} />
-                </pre>
-              );
-            }
+          const match = /<pre([^>]*)>([\s\S]*?)<\/pre>/.exec(html);
+          if (match) {
+            const attrs = match[1];
+            const innerHtml = match[2];
+            const classMatch = /class="([^"]*)"/.exec(attrs);
+            const styleMatch = /style="([^"]*)"/.exec(attrs);
+            const tabIndexMatch = /tabindex="(\d+)"/.exec(attrs);
+            const className = classMatch?.[1];
+            const style = styleMatch ? parseStyle(styleMatch[1]) : undefined;
+            const tabIndex = tabIndexMatch ? Number(tabIndexMatch[1]) : undefined;
+
+            return (
+              <pre
+                className={cn(className, "relative")}
+                style={style}
+                tabIndex={tabIndex}
+              >
+                <CopyButton code={code} />
+                <code dangerouslySetInnerHTML={{ __html: innerHtml }} />
+              </pre>
+            );
           }
-          return <div dangerouslySetInnerHTML={{ __html: html }} />;
+          return <pre dangerouslySetInnerHTML={{ __html: html }} />;
         }
         return <code className={className}>{codeChildren}</code>;
       },
