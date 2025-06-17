@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
@@ -15,13 +15,28 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
+import {
+  optimisticallySendMessage,
+  toUIMessages,
+  useThreadMessages,
+  type UIMessage,
+} from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
-import { useAction, useMutation } from "convex/react";
-import { ArrowUp, Check, Loader2, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { useMutation } from "convex/react";
+import {
+  ArrowDownCircle,
+  ArrowUp,
+  Check,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useStickToBottom } from "use-stick-to-bottom";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -223,13 +238,22 @@ function hasResult(value: unknown): value is { result: unknown } {
 /** Render a single message part based on its type. */
 function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   switch (part.type) {
-    case "text":
-      return <Markdown>{part.text}</Markdown>;
+    case "text": {
+      // Normalise streaming glitches:
+      // 1. When the backend starts a text part, it sometimes initialises
+      //    `part.text` as `undefined` and later concatenates the first chunk
+      //    which yields the literal string `"undefined…"`.
+      // 2. We strip that prefix once *and only once* on the fly so the user
+      //    never sees it.
+      const raw = typeof part.text === "string" ? part.text : "";
+      const cleaned = raw.startsWith("undefined") ? raw.slice("undefined".length) : raw;
+
+      return cleaned ? <Markdown>{cleaned}</Markdown> : null;
+    }
     case "reasoning":
       return (
-        <div className="mb-2 prose p-2 bg-muted/50 rounded">
-          <div className="text-xs font-medium text-muted-foreground mb-1">Thinking</div>
-          <div className="text-xs text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
+        <div className="mb-2 prose p-4 bg-muted/80 rounded-lg">
+          <div className="text-md text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
         </div>
       );
     case "tool-invocation":
@@ -259,55 +283,94 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   }
 }
 
-// Define a type for the accumulator that maps part types to their corresponding arrays
-type PartsByType = {
-  reasoning: Extract<UIMessage["parts"][number], { type: "reasoning" }>[];
-  "tool-invocation": Extract<UIMessage["parts"][number], { type: "tool-invocation" }>[];
-  text: Extract<UIMessage["parts"][number], { type: "text" }>[];
-};
-
-/** Render all parts of a message in the correct order */
+/**
+ * Render all parts of a message in a stable order.
+ *
+ * Desired order:
+ *   1. Every `reasoning` part
+ *   2. Every `tool‑invocation` part
+ *   3. Every `text` part
+ *
+ * We attach a key that combines the part type with its original index
+ * in the message’s `parts` array.  That index never changes during
+ * streaming, so React keeps each DOM node stable while new parts are
+ * appended—fixing the “only first reasoning part shows” bug.
+ */
 function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
-  // Initialize the accumulator with empty arrays for each part type
-  const initialParts: PartsByType = {
-    reasoning: [],
-    "tool-invocation": [],
-    text: [],
+  type PartWithIndex = [UIMessage["parts"][number], number];
+
+  const byType = {
+    reasoning: [] as PartWithIndex[],
+    "tool-invocation": [] as PartWithIndex[],
+    text: [] as PartWithIndex[],
   };
 
-  // Group parts by type using a type-safe approach
-  const partsByType = parts.reduce<PartsByType>((acc, part) => {
-    switch (part.type) {
-      case "reasoning":
-        acc.reasoning.push(part);
-        break;
-      case "tool-invocation":
-        acc["tool-invocation"].push(part);
-        break;
-      case "text":
-        acc.text.push(part);
-        break;
-      // Other part types are intentionally ignored as they're not rendered
-    }
-    return acc;
-  }, initialParts);
+  parts.forEach((part, idx) => {
+    if (part.type === "reasoning") byType.reasoning.push([part, idx]);
+    else if (part.type === "tool-invocation") byType["tool-invocation"].push([part, idx]);
+    else if (part.type === "text") byType.text.push([part, idx]);
+  });
 
-  // Render all parts in the desired order
   return (
     <>
-      {[...partsByType.reasoning, ...partsByType["tool-invocation"]].map((part, index) => (
-        <div key={index} className="mb-2">
-          {renderPart(part)}
-        </div>
-      ))}
-      {partsByType.text.length > 0 && (
-        <div className="mt-2">
-          {partsByType.text.map((part, index) => (
-            <div key={index}>{renderPart(part)}</div>
-          ))}
-        </div>
+      {[...byType.reasoning, ...byType["tool-invocation"], ...byType.text].map(
+        ([part, originalIdx]) => (
+          <div
+            key={`${part.type}-${originalIdx}`}
+            className={cn(part.type === "text" ? "mt-2" : "mb-2")}
+          >
+            {renderPart(part)}
+          </div>
+        ),
       )}
     </>
+  );
+}
+
+/**
+ * Render an assistant message with special handling for reasoning parts.
+ *
+ * Streaming messages initially contain only reasoning parts. While streaming
+ * and before a text part arrives, a spinner with “Reasoning…” is displayed
+ * instead of the actual reasoning content. Once text starts streaming the
+ * reasoning content is hidden until streaming completes. After completion the
+ * reasoning parts can be toggled via a collapsible section.
+ */
+function AssistantMessage({ message }: { message: UIMessage }): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const isStreaming = message.status === "streaming";
+  const hasText = message.parts.some((p) => p.type === "text");
+  const reasoning = message.parts.filter((p) => p.type === "reasoning");
+  const others = message.parts.filter((p) => p.type !== "reasoning");
+
+  if (isStreaming && !hasText) {
+    // if (true) {
+    return (
+      <div className="prose">
+        <div className="flex items-center gap-2 text-md text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Reasoning…</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      {renderMessageParts(others)}
+      {!isStreaming && reasoning.length > 0 && (
+        <details
+          className="prose"
+          open={open}
+          onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
+        >
+          <summary className="rounded-lg p-4 text-sm text-accent-foreground/80 bg-accent/100 dark:bg-accent/20 hover:opacity-85 active:opacity-75 transition-all duration-200 ease-in-out select-none cursor-pointer">
+            {open ? "Hide reasoning" : "Show reasoning"}
+          </summary>
+          <div className="mt-1">{renderMessageParts(reasoning)}</div>
+        </details>
+      )}
+    </div>
   );
 }
 
@@ -371,36 +434,110 @@ export function ChatView({
       inputRef.current.focus();
     }
   }, [threadId]);
-  const messagesQuery = threadId
-    ? useThreadMessages(
-        api.chat.listThreadMessages,
-        { threadId },
-        {
-          initialNumItems: 20,
-          stream: true,
-        },
-      )
+
+  // // TODO: Old implementation. To remove.
+  // const messages = threadId
+  //   ? useThreadMessages(
+  //       api.chat.listThreadMessages,
+  //       { threadId },
+  //       {
+  //         initialNumItems: 20,
+  //         stream: true,
+  //       },
+  //     )
+  //   : undefined;
+
+  const messages = threadId
+    ? useThreadMessages(api.chat.listThreadMessages, threadId ? { threadId } : "skip", {
+        initialNumItems: 20,
+        stream: true,
+      })
     : undefined;
-  const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
+
+  // TODO: Old implementation. To remove.
+  //  const sendMessage = useAction(api.chatActions.sendMessage);
+
+  const sendMessage = useMutation(api.chat.streamMessageAsynchronously).withOptimisticUpdate(
+    (store, args) => {
+      if (args.threadId) {
+        optimisticallySendMessage(api.chat.listThreadMessages)(store, {
+          threadId: args.threadId,
+          prompt: args.prompt,
+        });
+      }
+    },
+  );
+
+  const createThread = useMutation(api.chat.createThread);
+
+  const [isCreatingThread, setIsCreatingThread] = useState(false);
+
+  const messageList: UIMessage[] = messages ? toUIMessages(messages.results ?? []) : [];
   const hasMessages = messageList.length > 0;
 
-  const send = useAction(api.chatActions.sendMessage);
+  const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
 
-  const isStreaming = (messagesQuery as { streaming?: boolean } | undefined)?.streaming ?? false;
+  const { scrollRef, contentRef, scrollToBottom, isAtBottom } = useStickToBottom({
+    resize: "smooth",
+    initial: "smooth",
+  });
 
+  /**
+   * Height of the chat form in pixels. Used to position the
+   * scroll-to-bottom button above the form with consistent spacing.
+   */
+  const [formHeight, setFormHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const node = formRef.current;
+    if (!node) return;
+    const update = () => setFormHeight(node.offsetHeight);
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    update();
+    return () => observer.disconnect();
+  }, []);
+
+  /**
+   * Submit handler for the message form. If a thread already exists it will
+   * stream the message immediately. Otherwise a new thread is created first
+   * and the message is optimistically streamed to that thread.
+   *
+   * While the thread is being created the input is disabled and a spinner
+   * replaces the send icon.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
     if (!text || !modelsLoaded || !model) return;
-    setPrompt("");
-    try {
-      const result = await send({ threadId, prompt: text, model });
-      formRef.current?.reset();
-      if (!threadId && onNewThread && result.threadId) {
-        onNewThread(result.threadId);
+    if (threadId) {
+      setPrompt("");
+      try {
+        const result = await sendMessage({ threadId, prompt: text, model });
+        formRef.current?.reset();
+        if (!threadId && onNewThread && result?.threadId) {
+          onNewThread(result.threadId);
+        }
+        scrollToBottom();
+      } catch (error) {
+        console.error("Failed to send message:", error);
       }
-    } catch (error) {
-      console.error("Failed to send message:", error);
+    } else {
+      setIsCreatingThread(true);
+      try {
+        const newThreadId = await createThread({});
+        // Optimistically send the message but don't await it
+        void sendMessage({ threadId: newThreadId, prompt: text, model });
+        formRef.current?.reset();
+        setPrompt("");
+        if (onNewThread) {
+          onNewThread(newThreadId);
+        }
+      } catch (error) {
+        console.error("Failed to create thread:", error);
+      } finally {
+        setIsCreatingThread(false);
+      }
     }
   };
 
@@ -408,37 +545,65 @@ export function ChatView({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="flex flex-col h-full">
+        <div className="relative flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
           <main
+            ref={scrollRef}
             className={cn(
-              "flex-1 overflow-y-auto p-4",
-              hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+              "relative flex-1 overflow-y-auto p-4 w-full max-w-[768px] mx-auto no-scrollbar ",
+              hasMessages ? undefined : "flex flex-col items-center justify-center ",
             )}
           >
-            {hasMessages &&
-              messageList.map((m) => (
-                <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
-                  {m.role === "user" ? (
-                    <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
-                      {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                        <div key={index}>{renderPart(part)}</div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="w-full">{renderMessageParts(m.parts)}</div>
-                  )}
-                </div>
-              ))}
-            {!threadId && (
-              <>
-                <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
-                <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
-              </>
-            )}
+            <div
+              ref={contentRef}
+              className={cn(
+                hasMessages ? "space-y-10" : "flex flex-col items-center justify-center",
+              )}
+            >
+              {hasMessages &&
+                messageList.map((m) => (
+                  <div
+                    key={m.key}
+                    className={cn("flex w-full", m.role === "user" && "justify-end")}
+                  >
+                    {m.role === "user" ? (
+                      <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
+                        {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                          <div key={index}>{renderPart(part)}</div>
+                        ))}
+                      </div>
+                    ) : m.role === "assistant" ? (
+                      <AssistantMessage message={m} />
+                    ) : (
+                      <div className="w-full">{renderMessageParts(m.parts)}</div>
+                    )}
+                  </div>
+                ))}
+              {!threadId && (
+                <>
+                  <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
+                  <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
+                </>
+              )}
+            </div>
           </main>
-          <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
-            <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
+          {!isAtBottom && (
+            <button
+              type="button"
+              onClick={() => scrollToBottom()}
+              className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
+              style={{ bottom: formHeight + 16 }}
+            >
+              <ArrowDownCircle className="h-6 w-6" />
+              <span className="sr-only">Scroll to bottom</span>
+            </button>
+          )}
+          <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+            className="px-4 pb-4 sm:px-6 sm:pb-6 w-full max-w-3xl mx-auto"
+          >
+            <div className="bg-card border rounded-xl p-4 drop-shadow-xs flex flex-col gap-3">
               <Textarea
                 ref={inputRef}
                 value={prompt}
@@ -451,8 +616,12 @@ export function ChatView({
                 }}
                 minRows={3}
                 maxRows={6}
+                disabled={isCreatingThread || isStreaming}
                 placeholder="Type a message..."
-                className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
+                className={cn(
+                  "border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0",
+                  isCreatingThread && "opacity-50",
+                )}
               />
               <div className="flex items-end justify-between">
                 <Popover
@@ -529,14 +698,14 @@ export function ChatView({
                   type="submit"
                   size="icon"
                   className="rounded-full"
-                  disabled={!modelsLoaded || !prompt.trim() || isStreaming}
+                  disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
                 >
-                  {isStreaming ? (
+                  {isCreatingThread ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <ArrowUp className="h-4 w-4" />
                   )}
-                  <span className="sr-only">{isStreaming ? "Sending..." : "Send"}</span>
+                  <span className="sr-only">Send</span>
                 </Button>
               </div>
             </div>

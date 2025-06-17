@@ -1,13 +1,15 @@
 "use node";
 
 import { type Thread } from "@convex-dev/agent";
-import { ConvexError, v } from "convex/values";
+import { v } from "convex/values";
 
 import { components } from "./_generated/api";
-import { action } from "./_generated/server";
+import { action, type ActionCtx } from "./_generated/server";
 import agent, { openrouter } from "./agent";
 import { allowedModels, defaultModel } from "./models";
 import { requireOwnThread, requireUserId } from "./threadOwnership";
+
+// NOTE Deprecated file, to be removed
 
 /**
  * Type guard ensuring a value is part of the `allowedModels` whitelist.
@@ -21,7 +23,7 @@ function isAllowedModel(value: string): value is (typeof allowedModels)[number][
  * @param thread - The thread to potentially update
  * @param ctx - The Convex action context
  */
-async function maybeUpdateThreadTitle(thread: Thread<any>, ctx: any) {
+async function maybeUpdateThreadTitle(thread: Thread<never>, ctx: ActionCtx) {
   const threadData = await ctx.runQuery(components.agent.threads.getThread, {
     threadId: thread.threadId,
   });
@@ -79,8 +81,3 @@ export const sendMessage = action({
     return { threadId: useThreadId };
   },
 });
-
-/**
- * Remove a thread and all of its messages. Only the owning user is allowed to
- * perform this action.
- */
