@@ -52,7 +52,7 @@ export function Markdown({ children }: MarkdownProps) {
       try {
         await navigator.clipboard.writeText(code);
         setCopied(true);
-        setTimeout(() => setCopied(false), 3000);
+        setTimeout(() => setCopied(false), 1000);
       } catch {
         /* clipboard unavailable */
       }
