@@ -238,7 +238,7 @@ function hasResult(value: unknown): value is { result: unknown } {
 /** Render a single message part based on its type. */
 function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   switch (part.type) {
-    case "text":
+    case "text": {
       // Normalise streaming glitches:
       // 1. When the backend starts a text part, it sometimes initialises
       //    `part.text` as `undefined` and later concatenates the first chunk
@@ -249,6 +249,7 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
       const cleaned = raw.startsWith("undefined") ? raw.slice("undefined".length) : raw;
 
       return cleaned ? <Markdown>{cleaned}</Markdown> : null;
+    }
     case "reasoning":
       return (
         <div className="mb-2 prose p-2 bg-muted/50 rounded">
