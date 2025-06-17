@@ -1,8 +1,8 @@
-import { vMessageDoc, vStreamArgs, vThreadDoc } from "@convex-dev/agent";
+import { vStreamArgs, vThreadDoc } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 
-import { api, components, internal } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 import { internalAction, mutation, query } from "./_generated/server";
 import agent, { openrouter } from "./agent";
 import { allowedModels, defaultModel } from "./models";
@@ -14,15 +14,6 @@ import { requireOwnThread, requireUserId } from "./threadOwnership";
 function isAllowedModel(value: string): value is (typeof allowedModels)[number]["id"] {
   return allowedModels.some((m) => m.id === value);
 }
-
-///////////////////////////////////////////////////
-//                                               //
-//  New implementations based on agent examples  //
-//                                               //
-///////////////////////////////////////////////////
-
-// TODO: Switch client to use new implementations
-// TODO: Remove old implementations
 
 /**
  * Create a new thread
@@ -39,13 +30,12 @@ export const createThread = mutation({
 });
 
 /**
- * Streaming, where generate the prompt message first, then asynchronously
- * generate the stream response.
+ * Saves user's message then asynchronously streams the generated response.
  */
 export const streamMessageAsynchronously = mutation({
   args: {
-    prompt: v.string(),
-    threadId: v.optional(v.string()),
+    prompt: v.string(), // User message
+    threadId: v.string(),
     model: v.optional(v.string()),
   },
   handler: async (ctx, { prompt, threadId, model }) => {
@@ -55,27 +45,30 @@ export const streamMessageAsynchronously = mutation({
       throw new ConvexError("Not authenticated");
     }
 
-    // TODO: if no threadId then create one
+    await requireOwnThread(ctx, threadId);
 
-    if (threadId) {
-      await requireOwnThread(ctx, threadId);
+    // Save user message
+    const { messageId } = await agent.saveMessage(ctx, {
+      threadId,
+      prompt,
+      // we're in a mutation, so skip embeddings for now. They'll be generated
+      // lazily when streaming text.
+      skipEmbeddings: true,
+    });
 
-      const { messageId } = await agent.saveMessage(ctx, {
-        threadId,
-        prompt,
-        // we're in a mutation, so skip embeddings for now. They'll be generated
-        // lazily when streaming text.
-        skipEmbeddings: true,
-      });
-      await ctx.scheduler.runAfter(0, internal.chat.streamMessage, {
-        threadId,
-        promptMessageId: messageId,
-        model,
-      });
-      // TODO: Schedule `maybeUpdateThreadTitle` to run as well
+    // Auto-title thread if title is "Untitled"
+    await ctx.scheduler.runAfter(0, internal.thread.maybeUpdateThreadTitle, {
+      threadId,
+    });
 
-      return { threadId };
-    }
+    // Stream chat messages
+    await ctx.scheduler.runAfter(0, internal.chat.streamMessage, {
+      threadId,
+      promptMessageId: messageId,
+      model,
+    });
+
+    return { threadId };
   },
 });
 
@@ -131,12 +124,6 @@ export const listThreadMessages = query({
   },
 });
 
-/////////////////////////////////////
-//                                 //
-//  Old implementations by Codex   //
-//                                 //
-/////////////////////////////////////
-
 export const listThreads = query({
   args: {},
   returns: v.array(vThreadDoc),
@@ -159,32 +146,5 @@ export const getThread = query({
   handler: async (ctx, { threadId }) => {
     const { thread } = await requireOwnThread(ctx, threadId);
     return thread;
-  },
-});
-
-export const listThreadMessagesOld = query({
-  args: {
-    threadId: v.string(),
-    paginationOpts: paginationOptsValidator,
-    streamArgs: vStreamArgs,
-  },
-  returns: v.object({
-    page: v.array(vMessageDoc),
-    continueCursor: v.string(),
-    isDone: v.boolean(),
-    splitCursor: v.optional(v.union(v.string(), v.null())),
-    pageStatus: v.optional(
-      v.union(v.literal("SplitRecommended"), v.literal("SplitRequired"), v.null()),
-    ),
-    streams: v.optional(v.any()),
-  }),
-  handler: async (ctx, { threadId, paginationOpts, streamArgs }) => {
-    await requireOwnThread(ctx, threadId);
-    const paginated = await agent.listMessages(ctx, {
-      threadId,
-      paginationOpts,
-    });
-    const streams = await agent.syncStreams(ctx, { threadId, streamArgs });
-    return { ...paginated, streams };
   },
 });
