@@ -68,6 +68,10 @@ export const createThread = mutation({
   },
   handler: async (ctx, { userId }) => {
     const useUserId = userId || (await requireUserId(ctx));
+    const { threadId } = await agent.createThread(ctx, { userId: useUserId });
+    return threadId;
+  },
+});
 
 /**
  * Stream a user message to the specified thread, creating the thread if
@@ -102,26 +106,16 @@ export const streamMessage = action({
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .unique();
     const apiKey = record
-      ? await decryptApiKey(
-          record.encryptedApiKey,
-          process.env.ENCRYPTION_SECRET ?? "",
-        )
-      : process.env.OPENROUTER_API_KEY ?? "";
+      ? await decryptApiKey(record.encryptedApiKey, process.env.ENCRYPTION_SECRET ?? "")
+      : (process.env.OPENROUTER_API_KEY ?? "");
     const provider = createProvider(apiKey);
     const modelId = model && isAllowedModel(model) ? model : defaultModel;
 
-    await thread.streamText(
-      { prompt, model: provider.chat(modelId) },
-      { saveStreamDeltas: true },
-    );
+    await thread.streamText({ prompt, model: provider.chat(modelId) }, { saveStreamDeltas: true });
 
     await maybeUpdateThreadTitle(thread, ctx);
 
     return { threadId: useThreadId };
-  },
-});
-    const { threadId } = await agent.createThread(ctx, { userId: useUserId });
-    return threadId;
   },
 });
 
@@ -158,6 +152,7 @@ export const streamMessageAsynchronously = mutation({
         threadId,
         promptMessageId: messageId,
         model,
+        userId,
       });
       // TODO: Schedule `maybeUpdateThreadTitle` to run as well
 
@@ -167,12 +162,25 @@ export const streamMessageAsynchronously = mutation({
 });
 
 export const streamMessage = internalAction({
-  args: { promptMessageId: v.string(), threadId: v.string(), model: v.optional(v.string()) },
-  handler: async (ctx, { promptMessageId, threadId, model }) => {
+  args: {
+    promptMessageId: v.string(),
+    threadId: v.string(),
+    model: v.optional(v.string()),
+    userId: v.string(),
+  },
+  handler: async (ctx, { promptMessageId, threadId, model, userId }) => {
     const { thread } = await agent.continueThread(ctx, { threadId });
+    const record = await ctx.db
+      .query("user_settings")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    const apiKey = record
+      ? await decryptApiKey(record.encryptedApiKey, process.env.ENCRYPTION_SECRET ?? "")
+      : (process.env.OPENROUTER_API_KEY ?? "");
+    const provider = createProvider(apiKey);
     const modelId = model && isAllowedModel(model) ? model : defaultModel;
     const result = await thread.streamText(
-      { promptMessageId, model: openrouter.chat(modelId) },
+      { promptMessageId, model: provider.chat(modelId) },
       { saveStreamDeltas: true },
     );
     await result.consumeStream();
