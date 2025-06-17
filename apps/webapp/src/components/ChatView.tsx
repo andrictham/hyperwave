@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type JSX } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
@@ -252,9 +252,8 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
     }
     case "reasoning":
       return (
-        <div className="mb-2 prose p-2 bg-muted/50 rounded">
-          <div className="text-xs font-medium text-muted-foreground mb-1">Thinking</div>
-          <div className="text-xs text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
+        <div className="mb-2 prose p-4 bg-muted/80 rounded-lg">
+          <div className="text-md text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
         </div>
       );
     case "tool-invocation":
@@ -325,6 +324,53 @@ function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
         ),
       )}
     </>
+  );
+}
+
+/**
+ * Render an assistant message with special handling for reasoning parts.
+ *
+ * Streaming messages initially contain only reasoning parts. While streaming
+ * and before a text part arrives, a spinner with “Reasoning…” is displayed
+ * instead of the actual reasoning content. Once text starts streaming the
+ * reasoning content is hidden until streaming completes. After completion the
+ * reasoning parts can be toggled via a collapsible section.
+ */
+function AssistantMessage({ message }: { message: UIMessage }): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const isStreaming = message.status === "streaming";
+  const hasText = message.parts.some((p) => p.type === "text");
+  const reasoning = message.parts.filter((p) => p.type === "reasoning");
+  const others = message.parts.filter((p) => p.type !== "reasoning");
+
+  if (isStreaming && !hasText) {
+    // if (true) {
+    return (
+      <div className="prose">
+        <div className="flex items-center gap-2 text-md text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Reasoning…</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      {renderMessageParts(others)}
+      {!isStreaming && reasoning.length > 0 && (
+        <details
+          className="prose"
+          open={open}
+          onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
+        >
+          <summary className="rounded-lg p-4 text-sm text-accent-foreground/80 bg-accent/100 dark:bg-accent/20 hover:opacity-85 active:opacity-75 transition-all duration-200 ease-in-out select-none cursor-pointer">
+            {open ? "Hide reasoning" : "Show reasoning"}
+          </summary>
+          <div className="mt-1">{renderMessageParts(reasoning)}</div>
+        </details>
+      )}
+    </div>
   );
 }
 
@@ -526,6 +572,8 @@ export function ChatView({
                           <div key={index}>{renderPart(part)}</div>
                         ))}
                       </div>
+                    ) : m.role === "assistant" ? (
+                      <AssistantMessage message={m} />
                     ) : (
                       <div className="w-full">{renderMessageParts(m.parts)}</div>
                     )}
