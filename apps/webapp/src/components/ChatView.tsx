@@ -503,13 +503,14 @@ export function ChatView({
           <main
             ref={scrollRef}
             className={cn(
-              "relative flex-1 overflow-y-auto p-4",
-              hasMessages ? undefined : "flex flex-col items-center justify-center",
+              "relative flex-1 overflow-y-auto p-4 sm:p-6 flex justify-center",
+              hasMessages ? undefined : "flex-col items-center justify-center",
             )}
           >
             <div
               ref={contentRef}
               className={cn(
+                "w-full max-w-3xl",
                 hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
               )}
             >
@@ -520,7 +521,7 @@ export function ChatView({
                     className={cn("flex w-full", m.role === "user" && "justify-end")}
                   >
                     {m.role === "user" ? (
-                      <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
+                      <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow w-full sm:w-fit sm:max-w-[70%] min-w-[10rem]">
                         {m.parts.map((part: UIMessage["parts"][number], index: number) => (
                           <div key={index}>{renderPart(part)}</div>
                         ))}
@@ -549,8 +550,12 @@ export function ChatView({
               <span className="sr-only">Scroll to bottom</span>
             </button>
           )}
-          <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
-            <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
+          <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+            className="px-4 pb-4 sm:px-6 sm:pb-6 flex justify-center"
+          >
+            <div className="w-full max-w-3xl bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
               <Textarea
                 ref={inputRef}
                 value={prompt}
