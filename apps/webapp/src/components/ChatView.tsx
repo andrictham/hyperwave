@@ -431,10 +431,27 @@ export function ChatView({
 
   const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
 
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const { scrollRef, contentRef, scrollToBottom, isAtBottom } = useStickToBottom({
     resize: "smooth",
     initial: "smooth",
   });
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    const root = scrollRef.current;
+    if (!target || !root || !messages) return;
+    const observer = new IntersectionObserver(async ([entry]) => {
+      if (entry.isIntersecting && messages.status === "CanLoadMore") {
+        const previousHeight = root.scrollHeight;
+        const previousTop = root.scrollTop;
+        await messages.loadMore(20);
+        root.scrollTop = root.scrollHeight - previousHeight + previousTop;
+      }
+    }, { root, threshold: 0 });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [messages]);
 
   /**
    * Height of the chat form in pixels. Used to position the
@@ -514,6 +531,14 @@ export function ChatView({
                 hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
               )}
             >
+              <div ref={loadMoreRef} className="flex justify-center py-2">
+                {messages && messages.status === "LoadingMore" && (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="sr-only">Loading more</span>
+                  </>
+                )}
+              </div>
               {hasMessages &&
                 messageList.map((m) => (
                   <div
