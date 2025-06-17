@@ -504,6 +504,7 @@ export function ChatView({
               ref={contentRef}
               className={cn(
                 hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+                "mx-auto w-full max-w-[48rem]"
               )}
             >
               {hasMessages &&
@@ -543,7 +544,7 @@ export function ChatView({
             </button>
           )}
           <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
-            <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
+            <div className="mx-auto w-full max-w-[48rem] bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
               <Textarea
                 ref={inputRef}
                 value={prompt}
