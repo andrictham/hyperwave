@@ -425,7 +425,14 @@ export function ChatView({
   //  const sendMessage = useAction(api.chatActions.sendMessage);
 
   const sendMessage = useMutation(api.chat.streamMessageAsynchronously).withOptimisticUpdate(
-    optimisticallySendMessage(api.chat.listThreadMessages),
+    (store, args) => {
+      if (args.threadId) {
+        optimisticallySendMessage(api.chat.listThreadMessages)(store, {
+          threadId: args.threadId,
+          prompt: args.prompt,
+        });
+      }
+    },
   );
 
   const createThread = useMutation(api.chat.createThread);
@@ -475,7 +482,7 @@ export function ChatView({
       try {
         const result = await sendMessage({ threadId, prompt: text, model });
         formRef.current?.reset();
-        if (!threadId && onNewThread && result.threadId) {
+        if (!threadId && onNewThread && result?.threadId) {
           onNewThread(result.threadId);
         }
         scrollToBottom();
