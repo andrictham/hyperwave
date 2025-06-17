@@ -344,7 +344,7 @@ export function ChatView({
   const modelsConfig = useQuery(api.models.listModels);
   const modelsLoaded = modelsConfig !== undefined;
   const { model: searchModel } = RootRoute.useSearch();
-  const navigate = useNavigate({ from: RootRoute.id });
+  const navigate = RootRoute.useNavigate();
   const [model, setModel] = useState<string>();
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [modelFilter, setModelFilter] = useState("");

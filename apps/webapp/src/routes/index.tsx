@@ -9,6 +9,7 @@ function HomeComponent() {
   const navigate = useNavigate();
   return (
     <ChatView
+      key="home"
       onNewThread={(id) => navigate({ to: "/chat/$threadId", params: { threadId: id } })}
     />
   );

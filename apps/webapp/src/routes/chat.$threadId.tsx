@@ -10,7 +10,7 @@ function ThreadRoute() {
   const { threadId } = Route.useParams();
   return (
     <RedirectErrorBoundary to="/">
-      <ChatView threadId={threadId} />
+      <ChatView key={threadId} threadId={threadId} />
     </RedirectErrorBoundary>
   );
 }
