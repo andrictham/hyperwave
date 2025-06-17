@@ -445,7 +445,7 @@ export function ChatView({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="flex flex-col h-full">
+        <div className="relative flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
           <main
             ref={scrollRef}
@@ -478,19 +478,19 @@ export function ChatView({
                   <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
                 </>
               )}
-            </div>
-            {!isAtBottom && (
-              <button
-                type="button"
-                onClick={() => scrollToBottom()}
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
-              >
-                <ArrowDownCircle className="h-6 w-6" />
-                <span className="sr-only">Scroll to bottom</span>
-              </button>
-            )}
-          </main>
-          <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
+          </div>
+        </main>
+        {!isAtBottom && (
+          <button
+            type="button"
+            onClick={() => scrollToBottom()}
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
+          >
+            <ArrowDownCircle className="h-6 w-6" />
+            <span className="sr-only">Scroll to bottom</span>
+          </button>
+        )}
+        <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
             <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
               <Textarea
                 ref={inputRef}
