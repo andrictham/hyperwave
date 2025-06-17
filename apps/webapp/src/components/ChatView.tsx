@@ -239,7 +239,16 @@ function hasResult(value: unknown): value is { result: unknown } {
 function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   switch (part.type) {
     case "text":
-      return <Markdown>{part.text}</Markdown>;
+      // Normalise streaming glitches:
+      // 1. When the backend starts a text part, it sometimes initialises
+      //    `part.text` as `undefined` and later concatenates the first chunk
+      //    which yields the literal string `"undefined…"`.
+      // 2. We strip that prefix once *and only once* on the fly so the user
+      //    never sees it.
+      const raw = typeof part.text === "string" ? part.text : "";
+      const cleaned = raw.startsWith("undefined") ? raw.slice("undefined".length) : raw;
+
+      return cleaned ? <Markdown>{cleaned}</Markdown> : null;
     case "reasoning":
       return (
         <div className="mb-2 prose p-2 bg-muted/50 rounded">
@@ -274,53 +283,45 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   }
 }
 
-// Define a type for the accumulator that maps part types to their corresponding arrays
-type PartsByType = {
-  reasoning: Extract<UIMessage["parts"][number], { type: "reasoning" }>[];
-  "tool-invocation": Extract<UIMessage["parts"][number], { type: "tool-invocation" }>[];
-  text: Extract<UIMessage["parts"][number], { type: "text" }>[];
-};
-
-/** Render all parts of a message in the correct order */
+/**
+ * Render all parts of a message in a stable order.
+ *
+ * Desired order:
+ *   1. Every `reasoning` part
+ *   2. Every `tool‑invocation` part
+ *   3. Every `text` part
+ *
+ * We attach a key that combines the part type with its original index
+ * in the message’s `parts` array.  That index never changes during
+ * streaming, so React keeps each DOM node stable while new parts are
+ * appended—fixing the “only first reasoning part shows” bug.
+ */
 function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
-  // Initialize the accumulator with empty arrays for each part type
-  const initialParts: PartsByType = {
-    reasoning: [],
-    "tool-invocation": [],
-    text: [],
+  type PartWithIndex = [UIMessage["parts"][number], number];
+
+  const byType = {
+    reasoning: [] as PartWithIndex[],
+    "tool-invocation": [] as PartWithIndex[],
+    text: [] as PartWithIndex[],
   };
 
-  // Group parts by type using a type-safe approach
-  const partsByType = parts.reduce<PartsByType>((acc, part) => {
-    switch (part.type) {
-      case "reasoning":
-        acc.reasoning.push(part);
-        break;
-      case "tool-invocation":
-        acc["tool-invocation"].push(part);
-        break;
-      case "text":
-        acc.text.push(part);
-        break;
-      // Other part types are intentionally ignored as they're not rendered
-    }
-    return acc;
-  }, initialParts);
+  parts.forEach((part, idx) => {
+    if (part.type === "reasoning") byType.reasoning.push([part, idx]);
+    else if (part.type === "tool-invocation") byType["tool-invocation"].push([part, idx]);
+    else if (part.type === "text") byType.text.push([part, idx]);
+  });
 
-  // Render all parts in the desired order
   return (
     <>
-      {[...partsByType.reasoning, ...partsByType["tool-invocation"]].map((part, index) => (
-        <div key={index} className="mb-2">
-          {renderPart(part)}
-        </div>
-      ))}
-      {partsByType.text.length > 0 && (
-        <div className="mt-2">
-          {partsByType.text.map((part, index) => (
-            <div key={index}>{renderPart(part)}</div>
-          ))}
-        </div>
+      {[...byType.reasoning, ...byType["tool-invocation"], ...byType.text].map(
+        ([part, originalIdx]) => (
+          <div
+            key={`${part.type}-${originalIdx}`}
+            className={cn(part.type === "text" ? "mt-2" : "mb-2")}
+          >
+            {renderPart(part)}
+          </div>
+        ),
       )}
     </>
   );
