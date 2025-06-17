@@ -141,6 +141,27 @@ export function Markdown({ children }: MarkdownProps) {
     }, {} as React.CSSProperties);
   }
 
+  /**
+   * Parse the HTML string returned by Shiki and extract the `<pre>` element
+   * details so it can be rendered without an extra wrapper.
+   */
+  function parseShikiHtml(html: string) {
+    const match = html.trim().match(/^<pre([^>]*)>([\s\S]*)<\/pre>$/i);
+    if (!match) return null;
+    const [, attrs, innerHtml] = match;
+
+    const classMatch = attrs.match(/class="([^"]*)"/);
+    const styleMatch = attrs.match(/style="([^"]*)"/);
+    const tabMatch = attrs.match(/tabindex="([^"]*)"/);
+
+    return {
+      className: classMatch?.[1],
+      style: styleMatch ? parseStyle(styleMatch[1]) : undefined,
+      tabIndex: tabMatch ? Number(tabMatch[1]) : undefined,
+      innerHtml,
+    } as const;
+  }
+
   const components = React.useMemo<Components>(() => {
     return {
       code({ node: _node, inline, className, children: codeChildren }: CodeProps) {
@@ -155,28 +176,38 @@ export function Markdown({ children }: MarkdownProps) {
             theme: "nord",
           });
 
-          if (typeof window !== "undefined") {
+          let parsed = parseShikiHtml(html);
+          if (!parsed && typeof window !== "undefined") {
             const doc = new window.DOMParser().parseFromString(html, "text/html");
             const pre = doc.querySelector("pre");
             if (pre) {
-              const cls = pre.className;
-              const styleAttr = pre.getAttribute("style") ?? undefined;
-              const tabIndexAttr = pre.getAttribute("tabindex");
-              const tabIndex = tabIndexAttr ? Number(tabIndexAttr) : undefined;
-              const innerHtml = pre.innerHTML;
-              return (
-                <pre
-                  className={cn(cls, "relative")}
-                  style={styleAttr ? parseStyle(styleAttr) : undefined}
-                  tabIndex={tabIndex}
-                >
-                  <CopyButton code={code} />
-                  <code dangerouslySetInnerHTML={{ __html: innerHtml }} />
-                </pre>
-              );
+              parsed = {
+                className: pre.className,
+                style: pre.getAttribute("style")
+                  ? parseStyle(pre.getAttribute("style")!)
+                  : undefined,
+                tabIndex: pre.getAttribute("tabindex")
+                  ? Number(pre.getAttribute("tabindex"))
+                  : undefined,
+                innerHtml: pre.innerHTML,
+              } as const;
             }
           }
-          return <div dangerouslySetInnerHTML={{ __html: html }} />;
+          if (parsed) {
+            const { className: cls, style, tabIndex, innerHtml } = parsed;
+            return (
+              <pre className={cn(cls, "relative")} style={style} tabIndex={tabIndex}>
+                <CopyButton code={code} />
+                <code dangerouslySetInnerHTML={{ __html: innerHtml }} />
+              </pre>
+            );
+          }
+          return (
+            <pre className="relative">
+              <CopyButton code={code} />
+              <code>{code}</code>
+            </pre>
+          );
         }
         return <code className={className}>{codeChildren}</code>;
       },
