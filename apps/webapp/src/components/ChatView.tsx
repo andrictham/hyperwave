@@ -436,6 +436,19 @@ export function ChatView({
     initial: "smooth",
   });
 
+  // Fetch additional messages when the user scrolls to the top of the chat
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!threadId || !container || !messages) return;
+    const handleScroll = () => {
+      if (container.scrollTop <= 0 && messages.status === "CanLoadMore") {
+        messages.loadMore(20);
+      }
+    };
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [scrollRef, threadId, messages]);
+
   /**
    * Height of the chat form in pixels. Used to position the
    * scroll-to-bottom button above the form with consistent spacing.
@@ -514,6 +527,12 @@ export function ChatView({
                 hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
               )}
             >
+              {messages &&
+                (messages.status === "LoadingMore" || messages.status === "LoadingFirstPage") && (
+                  <div className="flex justify-center py-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </div>
+                )}
               {hasMessages &&
                 messageList.map((m) => (
                   <div
