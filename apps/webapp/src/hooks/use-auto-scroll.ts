@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from "react";
+import { RefObject, useEffect, useLayoutEffect, useState } from "react";
 
 /**
  * Options for {@link useAutoScroll}.
@@ -44,10 +44,26 @@ export function useAutoScroll(
   }, [ref, threshold]);
 
   // Scroll to the bottom whenever new content arrives while autoscroll is active.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!autoScroll) return;
     const el = ref.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    const id = requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+    return () => cancelAnimationFrame(id);
   }, [ref, autoScroll, ...deps]);
+
+  // Ensure autoscroll during streaming when element size changes.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      if (autoScroll) {
+        el.scrollTop = el.scrollHeight;
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref, autoScroll]);
 }
