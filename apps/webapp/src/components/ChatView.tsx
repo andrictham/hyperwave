@@ -25,7 +25,7 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { ArrowUp, Check, Loader2, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -523,8 +523,12 @@ export function ChatView({
                   className="rounded-full"
                   disabled={!modelsLoaded || !prompt.trim() || isStreaming}
                 >
-                  <ArrowUp className="h-4 w-4" />
-                  <span className="sr-only">Send</span>
+                  {isStreaming ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowUp className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">{isStreaming ? "Loading" : "Send"}</span>
                 </Button>
               </div>
             </div>
