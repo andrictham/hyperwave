@@ -11,12 +11,16 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
+import { z } from "zod";
 
 import splashImage from "../assets/login-splash.png";
 
 import "../index.css";
 
 export const Route = createRootRouteWithContext()({
+  validateSearch: z.object({
+    model: z.string().optional(),
+  }),
   component: RootComponent,
   head: () => ({
     meta: [

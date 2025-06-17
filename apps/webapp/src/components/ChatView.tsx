@@ -15,6 +15,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { Route as RootRoute } from "@/routes/__root";
 import {
   optimisticallySendMessage,
   toUIMessages,
@@ -341,18 +342,20 @@ export function ChatView({
   const [prompt, setPrompt] = useState("");
   const modelsConfig = useQuery(api.models.listModels);
   const modelsLoaded = modelsConfig !== undefined;
-  const [model, setModel] = useState<string>();
+  const rootSearch = RootRoute.useSearch();
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [modelFilter, setModelFilter] = useState("");
   const [activeModelIndex, setActiveModelIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const navigate = RootRoute.useNavigate();
+
   useEffect(() => {
-    if (modelsConfig && !model) {
-      setModel(modelsConfig.defaultModel);
+    if (modelsConfig && !rootSearch.model) {
+      navigate({ search: () => ({ model: modelsConfig.defaultModel }) });
     }
-  }, [modelsConfig, model]);
+  }, [modelsConfig, rootSearch.model, navigate]);
 
   const filteredModels = useMemo(() => {
     if (!modelsConfig) return [] as ModelInfo[];
@@ -360,12 +363,14 @@ export function ChatView({
     const base: ModelInfo[] = modelsConfig.models.filter(
       (m) => m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query),
     );
-    const selected: ModelInfo | undefined = modelsConfig.models.find((m) => m.id === model);
+    const selected: ModelInfo | undefined = modelsConfig.models.find(
+      (m) => m.id === rootSearch.model,
+    );
     if (selected && !base.some((m) => m.id === selected.id)) {
       base.unshift(selected);
     }
     return base;
-  }, [modelsConfig, modelFilter, model]);
+  }, [modelsConfig, modelFilter, rootSearch.model]);
 
   useEffect(() => {
     setActiveModelIndex(0);
@@ -378,7 +383,9 @@ export function ChatView({
     }
   }, [activeModelIndex, filteredModels]);
 
-  const selectedModelInfo: ModelInfo | undefined = modelsConfig?.models.find((m) => m.id === model);
+  const selectedModelInfo: ModelInfo | undefined = modelsConfig?.models.find(
+    (m) => m.id === rootSearch.model,
+  );
 
   // Focus the input when it's a new chat or when the component mounts
   useEffect(() => {
@@ -411,7 +418,13 @@ export function ChatView({
   //  const sendMessage = useAction(api.chatActions.sendMessage);
 
   const sendMessage = useMutation(api.chat.streamMessageAsynchronously).withOptimisticUpdate(
-    optimisticallySendMessage(api.chat.listThreadMessages),
+    (store, args) => {
+      if (!args.threadId) return;
+      optimisticallySendMessage(api.chat.listThreadMessages)(store, {
+        threadId: args.threadId,
+        prompt: args.prompt,
+      });
+    },
   );
 
   const createThread = useMutation(api.chat.createThread);
@@ -455,13 +468,13 @@ export function ChatView({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
-    if (!text || !modelsLoaded || !model) return;
+    if (!text || !modelsLoaded || !rootSearch.model) return;
     if (threadId) {
       setPrompt("");
       try {
-        const result = await sendMessage({ threadId, prompt: text, model });
+        const result = await sendMessage({ threadId, prompt: text, model: rootSearch.model });
         formRef.current?.reset();
-        if (!threadId && onNewThread && result.threadId) {
+        if (result && !threadId && onNewThread && result.threadId) {
           onNewThread(result.threadId);
         }
         scrollToBottom();
@@ -473,7 +486,7 @@ export function ChatView({
       try {
         const newThreadId = await createThread({});
         // Optimistically send the message but don't await it
-        void sendMessage({ threadId: newThreadId, prompt: text, model });
+        void sendMessage({ threadId: newThreadId, prompt: text, model: rootSearch.model });
         formRef.current?.reset();
         setPrompt("");
         if (onNewThread) {
@@ -576,7 +589,7 @@ export function ChatView({
                 >
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
-                      {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
+                      {modelsLoaded ? (selectedModelInfo?.name ?? rootSearch.model) : "Loading..."}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -602,7 +615,7 @@ export function ChatView({
                             e.preventDefault();
                             const m = filteredModels[activeModelIndex];
                             if (m) {
-                              setModel(m.id);
+                              navigate({ search: () => ({ model: m.id }) });
                               setModelMenuOpen(false);
                             }
                           }
@@ -620,15 +633,15 @@ export function ChatView({
                           }}
                           type="button"
                           onClick={() => {
-                            setModel(m.id);
+                            navigate({ search: () => ({ model: m.id }) });
                             setModelMenuOpen(false);
                           }}
                           className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${
                             idx === activeModelIndex ? "bg-accent text-accent-foreground" : ""
-                          } ${m.id === model ? "font-semibold" : ""}`}
+                          } ${m.id === rootSearch.model ? "font-semibold" : ""}`}
                         >
                           <span>{m.name}</span>
-                          {m.id === model && <Check className="w-4 h-4" />}
+                          {m.id === rootSearch.model && <Check className="w-4 h-4" />}
                         </button>
                       ))}
                     </div>
