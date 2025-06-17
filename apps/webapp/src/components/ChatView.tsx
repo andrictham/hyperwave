@@ -144,7 +144,7 @@ function ThreadHeader({ threadId }: { threadId?: string }) {
   return (
     <header className="flex items-center justify-between h-14 border-b px-4 relative">
       <SidebarTrigger className="mr-2" />
-      <div className="flex max-w-lg">
+      <div className="flex max-w-full flex-1">
         {isEditing ? (
           <div className="flex items-center gap-2">
             <Input
@@ -491,12 +491,12 @@ export function ChatView({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="relative flex flex-col h-full">
+        <div className="relative flex flex-col h-full w-full max-w-screen-md mx-auto">
           <ThreadHeader threadId={threadId} />
           <main
             ref={scrollRef}
             className={cn(
-              "relative flex-1 overflow-y-auto p-4",
+              "relative flex-1 overflow-y-auto p-4 sm:px-6",
               hasMessages ? undefined : "flex flex-col items-center justify-center",
             )}
           >
@@ -504,6 +504,7 @@ export function ChatView({
               ref={contentRef}
               className={cn(
                 hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+                "px-4 sm:px-6",
               )}
             >
               {hasMessages &&
@@ -513,7 +514,7 @@ export function ChatView({
                     className={cn("flex w-full", m.role === "user" && "justify-end")}
                   >
                     {m.role === "user" ? (
-                      <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
+                      <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-full sm:max-w-[70%] min-w-[10rem] w-fit">
                         {m.parts.map((part: UIMessage["parts"][number], index: number) => (
                           <div key={index}>{renderPart(part)}</div>
                         ))}
