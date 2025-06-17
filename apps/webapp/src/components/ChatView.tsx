@@ -388,6 +388,10 @@ export function ChatView({
     navigate({
       search: (prev) => ({ ...prev, model: m }),
       replace: true,
+      resetScroll: false,
+    });
+      search: (prev) => ({ ...prev, model: m }),
+      replace: true,
     });
     setModel(m);
   };
