@@ -37,7 +37,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const healthCheck = useQuery(api.healthCheck?.get);
   const threads = useQuery(api.chat.listThreads) ?? [];
   const user = useQuery(api.auth.me);
-  const deleteThread = useMutation(api.chatActions.deleteThread).withOptimisticUpdate(
+  const deleteThread = useMutation(api.thread.deleteThread).withOptimisticUpdate(
     (store, { threadId }) => {
       for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
         if (!value) continue;
@@ -50,7 +50,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       store.setQuery(api.chat.getThread, { threadId }, undefined);
     },
   );
-  const updateThread = useMutation(api.chatActions.updateThread).withOptimisticUpdate(
+  const updateThread = useMutation(api.thread.updateThread).withOptimisticUpdate(
     (store, { threadId, title }) => {
       if (!title) return;
       const current = store.getQuery(api.chat.getThread, { threadId });

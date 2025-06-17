@@ -28,7 +28,7 @@ import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react"
 function ThreadHeader({ threadId }: { threadId?: string }) {
   const navigate = useNavigate();
   const thread = useQuery(api.chat.getThread, threadId ? { threadId } : "skip");
-  const updateThread = useMutation(api.chatActions.updateThread).withOptimisticUpdate(
+  const updateThread = useMutation(api.thread.updateThread).withOptimisticUpdate(
     (store, { threadId, title }) => {
       if (!title) return;
       const existing = store.getQuery(api.chat.getThread, { threadId });
@@ -45,7 +45,7 @@ function ThreadHeader({ threadId }: { threadId?: string }) {
       }
     },
   );
-  const deleteThread = useMutation(api.chatActions.deleteThread).withOptimisticUpdate(
+  const deleteThread = useMutation(api.thread.deleteThread).withOptimisticUpdate(
     (store, { threadId }) => {
       store.setQuery(api.chat.getThread, { threadId }, undefined);
       for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
