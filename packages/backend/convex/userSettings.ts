@@ -1,5 +1,5 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
-import { mutation, query } from "./_generated/server";
+import { internalQuery, mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 
 import { encryptApiKey } from "./apiKeyCipher";
@@ -63,5 +63,20 @@ export const saveApiKey = mutation({
       await ctx.db.insert("user_settings", { userId, encryptedApiKey: encrypted });
     }
     return null;
+  },
+});
+
+/**
+ * Retrieve the encrypted API key for the given user.
+ */
+export const getEncryptedApiKey = internalQuery({
+  args: { userId: v.id("users") },
+  returns: v.union(v.object({ encryptedApiKey: v.string() }), v.null()),
+  handler: async (ctx, { userId }) => {
+    const record = await ctx.db
+      .query("user_settings")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique();
+    return record ? { encryptedApiKey: record.encryptedApiKey } : null;
   },
 });

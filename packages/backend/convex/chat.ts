@@ -167,12 +167,30 @@ export const streamMessageAsynchronously = mutation({
 });
 
 export const streamMessage = internalAction({
-  args: { promptMessageId: v.string(), threadId: v.string(), model: v.optional(v.string()) },
+  args: {
+    promptMessageId: v.string(),
+    threadId: v.string(),
+    model: v.optional(v.string()),
+  },
   handler: async (ctx, { promptMessageId, threadId, model }) => {
+    const { userId } = await requireOwnThread(ctx, threadId);
+
+    const settings = await ctx.runQuery(
+      internal.userSettings.getEncryptedApiKey,
+      { userId },
+    );
+    const apiKey = settings
+      ? await decryptApiKey(
+          settings.encryptedApiKey,
+          process.env.ENCRYPTION_SECRET ?? "",
+        )
+      : process.env.OPENROUTER_API_KEY ?? "";
+
+    const provider = createProvider(apiKey);
     const { thread } = await agent.continueThread(ctx, { threadId });
     const modelId = model && isAllowedModel(model) ? model : defaultModel;
     const result = await thread.streamText(
-      { promptMessageId, model: openrouter.chat(modelId) },
+      { promptMessageId, model: provider.chat(modelId) },
       { saveStreamDeltas: true },
     );
     await result.consumeStream();
