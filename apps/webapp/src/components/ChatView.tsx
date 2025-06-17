@@ -36,7 +36,9 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useStickToBottom } from "use-stick-to-bottom";
+import { useStickToBottom, type StickToBottomOptions } from "use-stick-to-bottom";
+
+import { Route as RootRoute } from "../routes/__root";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -341,6 +343,8 @@ export function ChatView({
   const [prompt, setPrompt] = useState("");
   const modelsConfig = useQuery(api.models.listModels);
   const modelsLoaded = modelsConfig !== undefined;
+  const { model: searchModel } = RootRoute.useSearch();
+  const navigate = RootRoute.useNavigate();
   const [model, setModel] = useState<string>();
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [modelFilter, setModelFilter] = useState("");
@@ -349,10 +353,12 @@ export function ChatView({
   const formRef = useRef<HTMLFormElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useEffect(() => {
-    if (modelsConfig && !model) {
+    if (searchModel) {
+      setModel(searchModel);
+    } else if (modelsConfig && !model) {
       setModel(modelsConfig.defaultModel);
     }
-  }, [modelsConfig, model]);
+  }, [modelsConfig, model, searchModel]);
 
   const filteredModels = useMemo(() => {
     if (!modelsConfig) return [] as ModelInfo[];
@@ -377,6 +383,15 @@ export function ChatView({
       target.scrollIntoView({ block: "nearest" });
     }
   }, [activeModelIndex, filteredModels]);
+
+  const handleModelSelect = (m: string) => {
+    navigate({
+      search: (prev) => ({ ...prev, model: m }),
+      replace: true,
+      resetScroll: false,
+    });
+    setModel(m);
+  };
 
   const selectedModelInfo: ModelInfo | undefined = modelsConfig?.models.find((m) => m.id === model);
 
@@ -423,10 +438,12 @@ export function ChatView({
 
   const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
 
-  const { scrollRef, contentRef, scrollToBottom, isAtBottom } = useStickToBottom({
-    resize: "smooth",
-    initial: "smooth",
-  });
+  const stickOptions = useMemo<StickToBottomOptions>(
+    () => ({ resize: "smooth", initial: "smooth" }),
+    [threadId],
+  );
+  const { scrollRef, contentRef, scrollToBottom, isAtBottom } =
+    useStickToBottom(stickOptions);
 
   /**
    * Height of the chat form in pixels. Used to position the
@@ -602,7 +619,7 @@ export function ChatView({
                             e.preventDefault();
                             const m = filteredModels[activeModelIndex];
                             if (m) {
-                              setModel(m.id);
+                              handleModelSelect(m.id);
                               setModelMenuOpen(false);
                             }
                           }
@@ -620,7 +637,7 @@ export function ChatView({
                           }}
                           type="button"
                           onClick={() => {
-                            setModel(m.id);
+                            handleModelSelect(m.id);
                             setModelMenuOpen(false);
                           }}
                           className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${
