@@ -21,7 +21,10 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useAction, useQuery } from "convex/react";
-  const { updateThread, deleteThread } = useThreadMutations();
+  const thread = useQuery(
+    api.chat.getThread,
+    threadId ? { threadId } : "skip",
+  );
         store.setQuery(
           api.chat.listThreads,
           args,
