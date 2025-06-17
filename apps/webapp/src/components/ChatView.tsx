@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,11 +14,29 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
+import { cn } from "@/lib/utils";
+import {
+  optimisticallySendMessage,
+  toUIMessages,
+  useThreadMessages,
+  type UIMessage,
+} from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
+import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
-import { useAction, useQuery } from "convex/react";
-import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { useQuery } from "convex-helpers/react/cache";
+import { useMutation } from "convex/react";
+import {
+  ArrowDownCircle,
+  ArrowUp,
+  Check,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useStickToBottom } from "use-stick-to-bottom";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -25,8 +44,36 @@ import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react"
 function ThreadHeader({ threadId }: { threadId?: string }) {
   const navigate = useNavigate();
   const thread = useQuery(api.chat.getThread, threadId ? { threadId } : "skip");
-  const updateThread = useAction(api.chatActions.updateThread);
-  const deleteThread = useAction(api.chatActions.deleteThread);
+  const updateThread = useMutation(api.thread.updateThread).withOptimisticUpdate(
+    (store, { threadId, title }) => {
+      if (!title) return;
+      const existing = store.getQuery(api.chat.getThread, { threadId });
+      if (existing) {
+        store.setQuery(api.chat.getThread, { threadId }, { ...existing, title });
+      }
+      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+        if (!value) continue;
+        store.setQuery(
+          api.chat.listThreads,
+          args,
+          value.map((t) => (t._id === threadId ? { ...t, title } : t)),
+        );
+      }
+    },
+  );
+  const deleteThread = useMutation(api.thread.deleteThread).withOptimisticUpdate(
+    (store, { threadId }) => {
+      store.setQuery(api.chat.getThread, { threadId }, undefined);
+      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+        if (!value) continue;
+        store.setQuery(
+          api.chat.listThreads,
+          args,
+          value.filter((t) => t._id !== threadId),
+        );
+      }
+    },
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -194,24 +241,89 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
     case "text":
       return <Markdown>{part.text}</Markdown>;
     case "reasoning":
-      return <pre className="text-xs opacity-70 whitespace-pre-wrap">{part.reasoning}</pre>;
+      return (
+        <div className="mb-2 prose p-2 bg-muted/50 rounded">
+          <div className="text-xs font-medium text-muted-foreground mb-1">Thinking</div>
+          <div className="text-xs text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
+        </div>
+      );
     case "tool-invocation":
       return (
-        <div className="text-xs border rounded p-2 bg-muted">
-          <div className="font-mono">{part.toolInvocation.toolName}</div>
-          <pre className="whitespace-pre-wrap">
-            {JSON.stringify(part.toolInvocation.args, null, 2)}
-          </pre>
-          {hasResult(part.toolInvocation) && (
-            <pre className="whitespace-pre-wrap mt-1">
-              {JSON.stringify(part.toolInvocation.result, null, 2)}
+        <div className="mb-2 border rounded p-2 bg-muted/50">
+          <div className="text-xs font-medium text-muted-foreground mb-1">
+            Using tool: <span className="font-mono">{part.toolInvocation.toolName}</span>
+          </div>
+          <div className="text-xs space-y-1">
+            <div className="font-medium">Arguments:</div>
+            <pre className="whitespace-pre-wrap bg-muted p-1 rounded">
+              {JSON.stringify(part.toolInvocation.args, null, 2)}
             </pre>
-          )}
+            {hasResult(part.toolInvocation) && (
+              <>
+                <div className="font-medium mt-1">Result:</div>
+                <pre className="whitespace-pre-wrap bg-muted p-1 rounded">
+                  {JSON.stringify(part.toolInvocation.result, null, 2)}
+                </pre>
+              </>
+            )}
+          </div>
         </div>
       );
     default:
       return null;
   }
+}
+
+// Define a type for the accumulator that maps part types to their corresponding arrays
+type PartsByType = {
+  reasoning: Extract<UIMessage["parts"][number], { type: "reasoning" }>[];
+  "tool-invocation": Extract<UIMessage["parts"][number], { type: "tool-invocation" }>[];
+  text: Extract<UIMessage["parts"][number], { type: "text" }>[];
+};
+
+/** Render all parts of a message in the correct order */
+function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
+  // Initialize the accumulator with empty arrays for each part type
+  const initialParts: PartsByType = {
+    reasoning: [],
+    "tool-invocation": [],
+    text: [],
+  };
+
+  // Group parts by type using a type-safe approach
+  const partsByType = parts.reduce<PartsByType>((acc, part) => {
+    switch (part.type) {
+      case "reasoning":
+        acc.reasoning.push(part);
+        break;
+      case "tool-invocation":
+        acc["tool-invocation"].push(part);
+        break;
+      case "text":
+        acc.text.push(part);
+        break;
+      // Other part types are intentionally ignored as they're not rendered
+    }
+    return acc;
+  }, initialParts);
+
+  // Render all parts in the desired order
+  return (
+    <>
+      {[...partsByType.reasoning, ...partsByType["tool-invocation"]].map((part, index) => (
+        <div key={index} className="mb-2">
+          {renderPart(part)}
+        </div>
+      ))}
+      {partsByType.text.length > 0 && (
+        <div className="mt-2">
+          {partsByType.text.map((part, index) => (
+            <div key={index}>{renderPart(part)}</div>
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 /**
@@ -231,12 +343,42 @@ export function ChatView({
   const modelsLoaded = modelsConfig !== undefined;
   const [model, setModel] = useState<string>();
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [modelFilter, setModelFilter] = useState("");
+  const [activeModelIndex, setActiveModelIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useEffect(() => {
     if (modelsConfig && !model) {
       setModel(modelsConfig.defaultModel);
     }
   }, [modelsConfig, model]);
+
+  const filteredModels = useMemo(() => {
+    if (!modelsConfig) return [] as ModelInfo[];
+    const query = modelFilter.toLowerCase();
+    const base: ModelInfo[] = modelsConfig.models.filter(
+      (m) => m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query),
+    );
+    const selected: ModelInfo | undefined = modelsConfig.models.find((m) => m.id === model);
+    if (selected && !base.some((m) => m.id === selected.id)) {
+      base.unshift(selected);
+    }
+    return base;
+  }, [modelsConfig, modelFilter, model]);
+
+  useEffect(() => {
+    setActiveModelIndex(0);
+  }, [modelFilter, modelMenuOpen, filteredModels.length]);
+
+  useEffect(() => {
+    const target = itemRefs.current[activeModelIndex];
+    if (target) {
+      target.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeModelIndex, filteredModels]);
+
+  const selectedModelInfo: ModelInfo | undefined = modelsConfig?.models.find((m) => m.id === model);
 
   // Focus the input when it's a new chat or when the component mounts
   useEffect(() => {
@@ -244,30 +386,104 @@ export function ChatView({
       inputRef.current.focus();
     }
   }, [threadId]);
-  const messagesQuery = threadId
+
+  // // TODO: Old implementation. To remove.
+  // const messages = threadId
+  //   ? useThreadMessages(
+  //       api.chat.listThreadMessages,
+  //       { threadId },
+  //       {
+  //         initialNumItems: 20,
+  //         stream: true,
+  //       },
+  //     )
+  //   : undefined;
+
+  const messages = threadId
     ? useThreadMessages(
         api.chat.listThreadMessages,
         { threadId },
-        {
-          initialNumItems: 20,
-          stream: true,
-        },
+        { initialNumItems: 20, stream: true },
       )
     : undefined;
-  const messageList: UIMessage[] = messagesQuery ? toUIMessages(messagesQuery.results ?? []) : [];
 
-  const send = useAction(api.chatActions.sendMessage);
+  // TODO: Old implementation. To remove.
+  //  const sendMessage = useAction(api.chatActions.sendMessage);
 
-  const isStreaming = (messagesQuery as { streaming?: boolean } | undefined)?.streaming ?? false;
+  const sendMessage = useMutation(api.chat.streamMessageAsynchronously).withOptimisticUpdate(
+    optimisticallySendMessage(api.chat.listThreadMessages),
+  );
 
+  const createThread = useMutation(api.chat.createThread);
+
+  const [isCreatingThread, setIsCreatingThread] = useState(false);
+
+  const messageList: UIMessage[] = messages ? toUIMessages(messages.results ?? []) : [];
+  const hasMessages = messageList.length > 0;
+
+  const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
+
+  const { scrollRef, contentRef, scrollToBottom, isAtBottom } = useStickToBottom({
+    resize: "smooth",
+    initial: "smooth",
+  });
+
+  /**
+   * Height of the chat form in pixels. Used to position the
+   * scroll-to-bottom button above the form with consistent spacing.
+   */
+  const [formHeight, setFormHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const node = formRef.current;
+    if (!node) return;
+    const update = () => setFormHeight(node.offsetHeight);
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    update();
+    return () => observer.disconnect();
+  }, []);
+
+  /**
+   * Submit handler for the message form. If a thread already exists it will
+   * stream the message immediately. Otherwise a new thread is created first
+   * and the message is optimistically streamed to that thread.
+   *
+   * While the thread is being created the input is disabled and a spinner
+   * replaces the send icon.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
     if (!text || !modelsLoaded || !model) return;
-    const result = await send({ threadId, prompt: text, model });
-    setPrompt("");
-    if (!threadId && onNewThread && result.threadId) {
-      onNewThread(result.threadId);
+    if (threadId) {
+      setPrompt("");
+      try {
+        const result = await sendMessage({ threadId, prompt: text, model });
+        formRef.current?.reset();
+        if (!threadId && onNewThread && result.threadId) {
+          onNewThread(result.threadId);
+        }
+        scrollToBottom();
+      } catch (error) {
+        console.error("Failed to send message:", error);
+      }
+    } else {
+      setIsCreatingThread(true);
+      try {
+        const newThreadId = await createThread({});
+        // Optimistically send the message but don't await it
+        void sendMessage({ threadId: newThreadId, prompt: text, model });
+        formRef.current?.reset();
+        setPrompt("");
+        if (onNewThread) {
+          onNewThread(newThreadId);
+        }
+      } catch (error) {
+        console.error("Failed to create thread:", error);
+      } finally {
+        setIsCreatingThread(false);
+      }
     }
   };
 
@@ -275,51 +491,144 @@ export function ChatView({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="flex flex-col h-full">
+        <div className="relative flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
-          <main className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messageList.map((m) => (
-              <div key={m.key} className="space-y-1">
-                <div className="font-semibold capitalize">{m.role}</div>
-                <div className="flex flex-col gap-1">
-                  {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                    <div key={index}>{renderPart(part)}</div>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <main
+            ref={scrollRef}
+            className={cn(
+              "relative flex-1 overflow-y-auto p-4",
+              hasMessages ? undefined : "flex flex-col items-center justify-center",
+            )}
+          >
+            <div
+              ref={contentRef}
+              className={cn(
+                hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+              )}
+            >
+              {hasMessages &&
+                messageList.map((m) => (
+                  <div
+                    key={m.key}
+                    className={cn("flex w-full", m.role === "user" && "justify-end")}
+                  >
+                    {m.role === "user" ? (
+                      <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
+                        {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                          <div key={index}>{renderPart(part)}</div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="w-full">{renderMessageParts(m.parts)}</div>
+                    )}
+                  </div>
+                ))}
+              {!threadId && (
+                <>
+                  <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
+                  <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
+                </>
+              )}
+            </div>
           </main>
-          <form onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
+          {!isAtBottom && (
+            <button
+              type="button"
+              onClick={() => scrollToBottom()}
+              className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
+              style={{ bottom: formHeight + 16 }}
+            >
+              <ArrowDownCircle className="h-6 w-6" />
+              <span className="sr-only">Scroll to bottom</span>
+            </button>
+          )}
+          <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
             <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
               <Textarea
                 ref={inputRef}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    formRef.current?.requestSubmit();
+                  }
+                }}
                 minRows={3}
                 maxRows={6}
+                disabled={isCreatingThread || isStreaming}
                 placeholder="Type a message..."
-                className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
+                className={cn(
+                  "border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0",
+                  isCreatingThread && "opacity-50",
+                )}
               />
               <div className="flex items-end justify-between">
-                <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+                <Popover
+                  open={modelMenuOpen}
+                  onOpenChange={(open) => {
+                    setModelMenuOpen(open);
+                    if (!open) {
+                      // Focus the textarea when the popover closes
+                      inputRef.current?.focus();
+                    }
+                  }}
+                >
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
-                      {modelsLoaded ? model : "Loading..."}
+                      {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="p-0">
-                    <div className="flex flex-col">
-                      {modelsConfig?.models.map((m) => (
+                  <PopoverContent
+                    align="start"
+                    className="p-0"
+                    onCloseAutoFocus={(e) => {
+                      e.preventDefault();
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    <div className="p-2 border-b">
+                      <Input
+                        value={modelFilter}
+                        onChange={(e) => setModelFilter(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setActiveModelIndex((i) => Math.min(i + 1, filteredModels.length - 1));
+                          } else if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setActiveModelIndex((i) => Math.max(i - 1, 0));
+                          } else if (e.key === "Enter") {
+                            e.preventDefault();
+                            const m = filteredModels[activeModelIndex];
+                            if (m) {
+                              setModel(m.id);
+                              setModelMenuOpen(false);
+                            }
+                          }
+                        }}
+                        placeholder="Search models..."
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="max-h-64 overflow-y-auto py-1">
+                      {filteredModels.map((m: ModelInfo, idx: number) => (
                         <button
-                          key={m}
+                          key={m.id}
+                          ref={(el) => {
+                            itemRefs.current[idx] = el;
+                          }}
                           type="button"
                           onClick={() => {
-                            setModel(m);
+                            setModel(m.id);
                             setModelMenuOpen(false);
                           }}
-                          className={`px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${m === model ? "font-semibold" : ""}`}
+                          className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${
+                            idx === activeModelIndex ? "bg-accent text-accent-foreground" : ""
+                          } ${m.id === model ? "font-semibold" : ""}`}
                         >
-                          {m}
+                          <span>{m.name}</span>
+                          {m.id === model && <Check className="w-4 h-4" />}
                         </button>
                       ))}
                     </div>
@@ -329,9 +638,13 @@ export function ChatView({
                   type="submit"
                   size="icon"
                   className="rounded-full"
-                  disabled={!modelsLoaded || !prompt.trim() || isStreaming}
+                  disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
                 >
-                  <ArrowUp className="h-4 w-4" />
+                  {isCreatingThread ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowUp className="h-4 w-4" />
+                  )}
                   <span className="sr-only">Send</span>
                 </Button>
               </div>

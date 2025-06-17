@@ -4,7 +4,7 @@ import { type Thread } from "@convex-dev/agent";
 import { ConvexError, v } from "convex/values";
 
 import { components } from "./_generated/api";
-import { action } from "./_generated/server";
+import { action, type ActionCtx } from "./_generated/server";
 import agent, { createProvider } from "./agent";
 import { decryptApiKey } from "./apiKeyCipher";
 import { allowedModels, defaultModel } from "./models";
@@ -13,8 +13,8 @@ import { requireOwnThread, requireUserId } from "./threadOwnership";
 /**
  * Type guard ensuring a value is part of the `allowedModels` whitelist.
  */
-function isAllowedModel(value: string): value is (typeof allowedModels)[number] {
-  return allowedModels.includes(value as (typeof allowedModels)[number]);
+function isAllowedModel(value: string): value is (typeof allowedModels)[number]["id"] {
+  return allowedModels.some((m) => m.id === value);
 }
 
 /**
@@ -22,7 +22,7 @@ function isAllowedModel(value: string): value is (typeof allowedModels)[number] 
  * @param thread - The thread to potentially update
  * @param ctx - The Convex action context
  */
-async function maybeUpdateThreadTitle(thread: Thread<any>, ctx: any) {
+async function maybeUpdateThreadTitle(thread: Thread<never>, ctx: ActionCtx) {
   const threadData = await ctx.runQuery(components.agent.threads.getThread, {
     threadId: thread.threadId,
   });
@@ -77,11 +77,8 @@ export const sendMessage = action({
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .unique();
     const apiKey = record
-      ? await decryptApiKey(
-          record.encryptedApiKey,
-          process.env.ENCRYPTION_SECRET ?? "",
-        )
-      : process.env.OPENROUTER_API_KEY ?? "";
+      ? await decryptApiKey(record.encryptedApiKey, process.env.ENCRYPTION_SECRET ?? "")
+      : (process.env.OPENROUTER_API_KEY ?? "");
     const provider = createProvider(apiKey);
     const modelId = model && isAllowedModel(model) ? model : defaultModel;
     await thread.generateText({ prompt, model: provider.chat(modelId) });
@@ -97,42 +94,3 @@ export const sendMessage = action({
  * Remove a thread and all of its messages. Only the owning user is allowed to
  * perform this action.
  */
-export const deleteThread = action({
-  args: { threadId: v.string() },
-  returns: v.null(),
-  handler: async (ctx, { threadId }) => {
-    await requireOwnThread(ctx, threadId);
-    await ctx.runAction(components.agent.threads.deleteAllForThreadIdSync, {
-      threadId,
-    });
-    return null;
-  },
-});
-
-export const updateThread = action({
-  args: {
-    threadId: v.string(),
-    title: v.optional(v.string()),
-  },
-  returns: v.object({
-    _id: v.string(),
-    _creationTime: v.number(),
-    status: v.union(v.literal("active"), v.literal("archived")),
-    title: v.optional(v.string()),
-    userId: v.optional(v.string()),
-  }),
-  handler: async (ctx, { threadId, title }) => {
-    await requireOwnThread(ctx, threadId);
-
-    const result = await ctx.runMutation(components.agent.threads.updateThread, {
-      threadId,
-      patch: { title },
-    });
-
-    if (!result) {
-      throw new ConvexError("Failed to update thread");
-    }
-
-    return result;
-  },
-});

@@ -1,5 +1,6 @@
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { createRouter, RouterProvider, type ReactNode } from "@tanstack/react-router";
+import { ConvexQueryCacheProvider } from "convex-helpers/react/cache";
 import { ConvexReactClient } from "convex/react";
 import ReactDOM from "react-dom/client";
 
@@ -14,7 +15,13 @@ const router = createRouter({
   defaultPendingComponent: () => <Loader />,
   context: {},
   Wrap: function WrapComponent({ children }: { children: ReactNode }) {
-    return <ConvexAuthProvider client={convex}>{children}</ConvexAuthProvider>;
+    return (
+      <ConvexAuthProvider client={convex}>
+        <ConvexQueryCacheProvider expiration={300_000} maxIdleEntries={250} debug={false}>
+          {children}
+        </ConvexQueryCacheProvider>
+      </ConvexAuthProvider>
+    );
   },
 });
 

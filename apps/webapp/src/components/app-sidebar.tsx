@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
-import logoDark from "@/assets/hyperwave-logo-dark.png";
-import logoLight from "@/assets/hyperwave-logo-light.png";
+import logomarkDark from "@/assets/hyperwave-logomark-dark.png";
+import logomarkLight from "@/assets/hyperwave-logomark-light.png";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -26,8 +26,9 @@ import {
 } from "@/components/ui/sidebar";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import { Link } from "@tanstack/react-router";
-import { useAction, useQuery } from "convex/react";
-import { MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { useQuery } from "convex-helpers/react/cache";
+import { useMutation } from "convex/react";
+import { Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
@@ -37,8 +38,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const healthCheck = useQuery(api.healthCheck?.get);
   const threads = useQuery(api.chat.listThreads) ?? [];
   const user = useQuery(api.auth.me);
-  const deleteThread = useAction(api.chatActions.deleteThread);
-  const updateThread = useAction(api.chatActions.updateThread);
+  const deleteThread = useMutation(api.thread.deleteThread).withOptimisticUpdate(
+    (store, { threadId }) => {
+      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+        if (!value) continue;
+        store.setQuery(
+          api.chat.listThreads,
+          args,
+          value.filter((t) => t._id !== threadId),
+        );
+      }
+      store.setQuery(api.chat.getThread, { threadId }, undefined);
+    },
+  );
+  const updateThread = useMutation(api.thread.updateThread).withOptimisticUpdate(
+    (store, { threadId, title }) => {
+      if (!title) return;
+      const current = store.getQuery(api.chat.getThread, { threadId });
+      if (current) {
+        store.setQuery(api.chat.getThread, { threadId }, { ...current, title });
+      }
+      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+        if (!value) continue;
+        store.setQuery(
+          api.chat.listThreads,
+          args,
+          value.map((t) => (t._id === threadId ? { ...t, title } : t)),
+        );
+      }
+    },
+  );
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [newThreadTitle, setNewThreadTitle] = useState("");
   const { isMobile } = useSidebar();
@@ -78,8 +107,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               to="/"
               className="flex h-12 items-center gap-2 rounded-md px-2 no-underline hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
-              <img src={logoLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
-              <img src={logoDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
+              <img src={logomarkLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
+              <img src={logomarkDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
             </Link>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -106,13 +135,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {threads.map((t: { _id: string; title?: string | null }) => (
                 <SidebarMenuItem key={t._id} className="flex items-center">
-                  <SidebarMenuButton asChild className="flex-1 truncate">
+                  <SidebarMenuButton
+                    asChild
+                    className={`flex-1 truncate overflow-hidden px-1  ${editingThreadId === t._id ? "hidden" : ""}`}
+                  >
                     <Link to="/chat/$threadId" params={{ threadId: t._id }} className="truncate">
                       {t.title ?? "Untitled"}
                     </Link>
                   </SidebarMenuButton>
                   {editingThreadId === t._id ? (
-                    <div className="flex items-center gap-1 pl-1">
+                    <div className="relative w-full">
                       <Input
                         value={newThreadTitle}
                         onChange={(e) => setNewThreadTitle(e.target.value)}
@@ -125,37 +157,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             handleRenameCancel();
                           }
                         }}
-                        className="h-8 w-32 text-sm"
+                        className="h-8 w-full pr-13 pl-1.5 text-sm"
                         autoFocus
                       />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRenameSubmit(t._id);
-                        }}
-                        aria-label="Save rename"
-                      >
-                        <div className="h-4 w-4 flex items-center justify-center">✓</div>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRenameCancel();
-                        }}
-                        aria-label="Cancel rename"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {/* Overlay action buttons so the input spans the full width */}
+                      <div className="absolute inset-y-0 right-0 flex items-center gap-0 pr-0.5">
+                        <Button
+                          variant="ghost"
+                          className="h-6 w-6 p-0 flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRenameSubmit(t._id);
+                          }}
+                          aria-label="Save rename"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="h-6 w-6 p-0 flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRenameCancel();
+                          }}
+                          aria-label="Cancel rename"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="pl-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction showOnHover={!isMobile}>
+                          <SidebarMenuAction showOnHover={!isMobile} className="bg-sidebar-accent">
                             <MoreHorizontal className="h-4 w-4" />
                             <span className="sr-only">More actions</span>
                           </SidebarMenuAction>
@@ -195,7 +230,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
         <NavSecondary className="mt-auto">
           <Link to="/">
-            <Button>New Chat</Button>
+            <Button variant="brand" size="lg" className="overflow-visible z-10 w-full">
+              New Chat
+            </Button>
           </Link>
         </NavSecondary>
       </SidebarContent>
