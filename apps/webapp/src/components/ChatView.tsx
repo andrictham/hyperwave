@@ -402,11 +402,10 @@ export function ChatView({
   //   : undefined;
 
   const messages = threadId
-    ? useThreadMessages(
-        api.chat.listThreadMessages,
-        { threadId },
-        { initialNumItems: 20, stream: true },
-      )
+    ? useThreadMessages(api.chat.listThreadMessages, threadId ? { threadId } : "skip", {
+        initialNumItems: 20,
+        stream: true,
+      })
     : undefined;
 
   // TODO: Old implementation. To remove.
