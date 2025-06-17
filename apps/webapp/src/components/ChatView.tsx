@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
@@ -424,6 +424,22 @@ export function ChatView({
     initial: "smooth",
   });
 
+  /**
+   * Height of the chat form in pixels. Used to position the
+   * scroll-to-bottom button above the form with consistent spacing.
+   */
+  const [formHeight, setFormHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const node = formRef.current;
+    if (!node) return;
+    const update = () => setFormHeight(node.offsetHeight);
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    update();
+    return () => observer.disconnect();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
@@ -484,7 +500,8 @@ export function ChatView({
           <button
             type="button"
             onClick={() => scrollToBottom()}
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
+            className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
+            style={{ bottom: formHeight + 16 }}
           >
             <ArrowDownCircle className="h-6 w-6" />
             <span className="sr-only">Scroll to bottom</span>
