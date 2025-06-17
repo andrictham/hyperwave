@@ -550,14 +550,14 @@ export function ChatView({
           <main
             ref={scrollRef}
             className={cn(
-              "relative flex-1 overflow-y-auto p-4",
-              hasMessages ? undefined : "flex flex-col items-center justify-center",
+              "relative flex-1 overflow-y-auto p-4 w-full max-w-[768px] mx-auto no-scrollbar ",
+              hasMessages ? undefined : "flex flex-col items-center justify-center ",
             )}
           >
             <div
               ref={contentRef}
               className={cn(
-                hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+                hasMessages ? "space-y-10" : "flex flex-col items-center justify-center",
               )}
             >
               {hasMessages &&
