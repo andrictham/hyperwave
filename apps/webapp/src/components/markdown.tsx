@@ -1,4 +1,7 @@
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Check, ClipboardCopy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -14,6 +17,30 @@ export interface MarkdownProps {
 /** Render Markdown with syntax highlighted code blocks using Shiki. */
 export function Markdown({ children }: MarkdownProps) {
   const [highlighter, setHighlighter] = React.useState<Highlighter | null>(null);
+
+  /** Parse Shiki HTML output to extract the pre attributes and inner code. */
+  function parseShikiHtml(html: string): {
+    className?: string;
+    style?: React.CSSProperties;
+    innerHtml: string;
+  } {
+    const template = document.createElement("template");
+    template.innerHTML = html.trim();
+    const pre = template.content.firstElementChild as HTMLElement | null;
+    if (!pre) return { innerHtml: html };
+    const className = pre.getAttribute("class") ?? undefined;
+    const styleAttr = pre.getAttribute("style") ?? undefined;
+    const style: React.CSSProperties | undefined = styleAttr
+      ? styleAttr.split(";").reduce<React.CSSProperties>((acc, part) => {
+          const [key, value] = part.split(":");
+          if (!key || !value) return acc;
+          const camel = key.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+          (acc as Record<string, string>)[camel] = value.trim();
+          return acc;
+        }, {})
+      : undefined;
+    return { className, style, innerHtml: pre.innerHTML };
+  }
 
   React.useEffect(() => {
     const langs = [
@@ -35,6 +62,44 @@ export function Markdown({ children }: MarkdownProps) {
     void getSingletonHighlighter({ themes: [nord], langs }).then(setHighlighter);
   }, []);
 
+  interface PreBlockProps {
+    readonly code: string;
+    readonly html: string;
+  }
+
+  /** Render a syntax highlighted code block with copy-to-clipboard support. */
+  function PreBlock({ code, html }: PreBlockProps) {
+    const { className, style, innerHtml } = React.useMemo(() => parseShikiHtml(html), [html]);
+    const [copied, setCopied] = React.useState(false);
+
+    const handleCopy = React.useCallback(() => {
+      void navigator.clipboard.writeText(code).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      });
+    }, [code]);
+
+    return (
+      <pre className={cn(className, "relative")} style={style} tabIndex={0}>
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          className="absolute right-2 top-2"
+          onClick={handleCopy}
+        >
+          {copied ? (
+            <Check className="text-accent" />
+          ) : (
+            <ClipboardCopy className="text-secondary-foreground" />
+          )}
+          <span className="sr-only">Copy code</span>
+        </Button>
+        <code dangerouslySetInnerHTML={{ __html: innerHtml }} />
+      </pre>
+    );
+  }
+
   interface CodeProps {
     node?: unknown;
     inline?: boolean;
@@ -52,13 +117,12 @@ export function Markdown({ children }: MarkdownProps) {
           const loaded = highlighter.getLoadedLanguages();
           const langToUse = loaded.includes(lang) ? lang : "txt";
           return (
-            <div
-              dangerouslySetInnerHTML={{
-                __html: highlighter.codeToHtml(code, {
-                  lang: langToUse,
-                  theme: "nord",
-                }),
-              }}
+            <PreBlock
+              code={code}
+              html={highlighter.codeToHtml(code, {
+                lang: langToUse,
+                theme: "nord",
+              })}
             />
           );
         }
