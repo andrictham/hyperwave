@@ -329,6 +329,52 @@ function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
 }
 
 /**
+ * Render an assistant message with special handling for reasoning parts.
+ *
+ * Streaming messages initially contain only reasoning parts. While streaming
+ * and before a text part arrives, a spinner with “Reasoning…” is displayed
+ * instead of the actual reasoning content. Once text starts streaming the
+ * reasoning content is hidden until streaming completes. After completion the
+ * reasoning parts can be toggled via a collapsible section.
+ */
+function AssistantMessage({ message }: { message: UIMessage }): JSX.Element {
+  const [open, setOpen] = useState(false);
+  const isStreaming = message.status === "streaming";
+  const hasText = message.parts.some((p) => p.type === "text");
+  const reasoning = message.parts.filter((p) => p.type === "reasoning");
+  const others = message.parts.filter((p) => p.type !== "reasoning");
+
+  if (isStreaming && !hasText) {
+    return (
+      <div className="w-full">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Reasoning…</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      {renderMessageParts(others)}
+      {!isStreaming && reasoning.length > 0 && (
+        <details
+          className="mt-2"
+          open={open}
+          onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
+        >
+          <summary className="cursor-pointer text-xs text-muted-foreground select-none">
+            {open ? "Hide reasoning" : "Show reasoning"}
+          </summary>
+          <div className="mt-1">{renderMessageParts(reasoning)}</div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+/**
  * Primary chat view showing the list of messages for a thread and a form to
  * compose new messages. A model can be selected per message via a popover
  * menu.
@@ -431,6 +477,30 @@ export function ChatView({
 
   const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
 
+  const messageListWithLoading: UIMessage[] = useMemo(() => {
+    if (
+      isStreaming &&
+      !messageList.some(
+        (m) => m.role === "assistant" && m.status === "streaming",
+      )
+    ) {
+      const maxOrder = messageList.reduce((max, m) => Math.max(max, m.order), 0);
+      const placeholder: UIMessage = {
+        id: "loading",
+        createdAt: new Date(),
+        key: `loading-${maxOrder + 1}`,
+        order: maxOrder + 1,
+        stepOrder: 0,
+        status: "streaming",
+        role: "assistant",
+        content: "",
+        parts: [],
+      };
+      return [...messageList, placeholder];
+    }
+    return messageList;
+  }, [isStreaming, messageList]);
+
   const { scrollRef, contentRef, scrollToBottom, isAtBottom } = useStickToBottom({
     resize: "smooth",
     initial: "smooth",
@@ -515,7 +585,7 @@ export function ChatView({
               )}
             >
               {hasMessages &&
-                messageList.map((m) => (
+                messageListWithLoading.map((m) => (
                   <div
                     key={m.key}
                     className={cn("flex w-full", m.role === "user" && "justify-end")}
@@ -526,6 +596,8 @@ export function ChatView({
                           <div key={index}>{renderPart(part)}</div>
                         ))}
                       </div>
+                    ) : m.role === "assistant" ? (
+                      <AssistantMessage message={m} />
                     ) : (
                       <div className="w-full">{renderMessageParts(m.parts)}</div>
                     )}
