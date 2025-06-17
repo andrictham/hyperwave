@@ -414,6 +414,10 @@ export function ChatView({
     optimisticallySendMessage(api.chat.listThreadMessages),
   );
 
+  const createThread = useMutation(api.chat.createThread);
+
+  const [isCreatingThread, setIsCreatingThread] = useState(false);
+
   const messageList: UIMessage[] = messages ? toUIMessages(messages.results ?? []) : [];
   const hasMessages = messageList.length > 0;
 
@@ -440,20 +444,46 @@ export function ChatView({
     return () => observer.disconnect();
   }, []);
 
+  /**
+   * Submit handler for the message form. If a thread already exists it will
+   * stream the message immediately. Otherwise a new thread is created first
+   * and the message is optimistically streamed to that thread.
+   *
+   * While the thread is being created the input is disabled and a spinner
+   * replaces the send icon.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
     if (!text || !modelsLoaded || !model) return;
-    setPrompt("");
-    try {
-      const result = await sendMessage({ threadId, prompt: text, model });
-      formRef.current?.reset();
-      if (!threadId && onNewThread && result.threadId) {
-        onNewThread(result.threadId);
+    if (threadId) {
+      setPrompt("");
+      try {
+        const result = await sendMessage({ threadId, prompt: text, model });
+        formRef.current?.reset();
+        if (!threadId && onNewThread && result.threadId) {
+          onNewThread(result.threadId);
+        }
+        scrollToBottom();
+      } catch (error) {
+        console.error("Failed to send message:", error);
       }
-      scrollToBottom();
-    } catch (error) {
-      console.error("Failed to send message:", error);
+    } else {
+      setIsCreatingThread(true);
+      try {
+        const newThreadId = await createThread({});
+        // Optimistically send the message but don't await it
+        void sendMessage({ threadId: newThreadId, prompt: text, model });
+        formRef.current?.reset();
+        setPrompt("");
+        if (onNewThread) {
+          onNewThread(newThreadId);
+        }
+      } catch (error) {
+        console.error("Failed to create thread:", error);
+      } finally {
+        setIsCreatingThread(false);
+      }
     }
   };
 
@@ -472,11 +502,16 @@ export function ChatView({
           >
             <div
               ref={contentRef}
-              className={cn(hasMessages ? "space-y-4" : "flex flex-col items-center justify-center")}
+              className={cn(
+                hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+              )}
             >
               {hasMessages &&
                 messageList.map((m) => (
-                  <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
+                  <div
+                    key={m.key}
+                    className={cn("flex w-full", m.role === "user" && "justify-end")}
+                  >
                     {m.role === "user" ? (
                       <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
                         {m.parts.map((part: UIMessage["parts"][number], index: number) => (
@@ -494,20 +529,20 @@ export function ChatView({
                   <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
                 </>
               )}
-          </div>
-        </main>
-        {!isAtBottom && (
-          <button
-            type="button"
-            onClick={() => scrollToBottom()}
-            className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
-            style={{ bottom: formHeight + 16 }}
-          >
-            <ArrowDownCircle className="h-6 w-6" />
-            <span className="sr-only">Scroll to bottom</span>
-          </button>
-        )}
-        <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
+            </div>
+          </main>
+          {!isAtBottom && (
+            <button
+              type="button"
+              onClick={() => scrollToBottom()}
+              className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
+              style={{ bottom: formHeight + 16 }}
+            >
+              <ArrowDownCircle className="h-6 w-6" />
+              <span className="sr-only">Scroll to bottom</span>
+            </button>
+          )}
+          <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
             <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
               <Textarea
                 ref={inputRef}
@@ -521,8 +556,12 @@ export function ChatView({
                 }}
                 minRows={3}
                 maxRows={6}
+                disabled={isCreatingThread || isStreaming}
                 placeholder="Type a message..."
-                className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
+                className={cn(
+                  "border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0",
+                  isCreatingThread && "opacity-50",
+                )}
               />
               <div className="flex items-end justify-between">
                 <Popover
@@ -599,14 +638,14 @@ export function ChatView({
                   type="submit"
                   size="icon"
                   className="rounded-full"
-                  disabled={!modelsLoaded || !prompt.trim() || isStreaming}
+                  disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
                 >
-                  {isStreaming ? (
+                  {isCreatingThread ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <ArrowUp className="h-4 w-4" />
                   )}
-                  <span className="sr-only">{isStreaming ? "Sending..." : "Send"}</span>
+                  <span className="sr-only">Send</span>
                 </Button>
               </div>
             </div>
