@@ -413,6 +413,14 @@ export function ChatView({
 
   const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
 
+  /**
+   * Submit handler for the message form. If a thread already exists it will
+   * stream the message immediately. Otherwise a new thread is created first
+   * and the message is optimistically streamed to that thread.
+   *
+   * While the thread is being created the input is disabled and a spinner
+   * replaces the send icon.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
