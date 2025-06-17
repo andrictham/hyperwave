@@ -385,7 +385,10 @@ export function ChatView({
   }, [activeModelIndex, filteredModels]);
 
   const handleModelSelect = (m: string) => {
-    navigate({ search: (prev) => ({ ...prev, model: m }) });
+    navigate({
+      search: (prev) => ({ ...prev, model: m }),
+      replace: true,
+    });
     setModel(m);
   };
 
@@ -506,6 +509,7 @@ export function ChatView({
           <ThreadHeader threadId={threadId} />
           <main
             ref={scrollRef}
+            id="chat-scroll-area"
             className={cn(
               "relative flex-1 overflow-y-auto p-4",
               hasMessages ? undefined : "flex flex-col items-center justify-center",
