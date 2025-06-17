@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -311,6 +312,46 @@ function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
   );
 }
 
+/** Render an assistant message with streaming and reasoning states. */
+function AssistantMessage({ message }: { message: UIMessage }) {
+  const [showReasoning, setShowReasoning] = useState(false);
+  const reasoningParts = message.parts.filter(
+    (p): p is Extract<UIMessage["parts"][number], { type: "reasoning" }> => p.type === "reasoning",
+  );
+  const nonReasoningParts = message.parts.filter((p) => p.type !== "reasoning");
+  const hasTextPart = nonReasoningParts.some((p) => p.type === "text");
+
+  if (message.status === "streaming") {
+    if (!hasTextPart) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Reasoning…</span>
+        </div>
+      );
+    }
+    return <>{renderMessageParts(nonReasoningParts)}</>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {renderMessageParts(nonReasoningParts)}
+      {reasoningParts.length > 0 && (
+        <Collapsible open={showReasoning} onOpenChange={setShowReasoning}>
+          <CollapsibleTrigger className="text-xs underline text-muted-foreground">
+            {showReasoning ? "Hide reasoning" : "Show reasoning"}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 space-y-1">
+            {reasoningParts.map((part, idx) => (
+              <div key={idx}>{renderPart(part)}</div>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </div>
+  );
+}
+
 /**
  * Primary chat view showing the list of messages for a thread and a form to
  * compose new messages. A model can be selected per message via a popover
@@ -426,10 +467,23 @@ export function ChatView({
                       ))}
                     </div>
                   ) : (
-                    <div className="w-full">{renderMessageParts(m.parts)}</div>
+                    <div className="w-full">
+                      <AssistantMessage message={m} />
+                    </div>
                   )}
                 </div>
               ))}
+            {(() => {
+              const hasStreamingAssistant = messageList.some(
+                (msg) => msg.role === "assistant" && msg.status === "streaming",
+              );
+              return isStreaming && !hasStreamingAssistant ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Responding…</span>
+                </div>
+              ) : null;
+            })()}
             {!threadId && (
               <>
                 <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
