@@ -19,7 +19,8 @@ import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/age
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
-import { useAction, useQuery } from "convex/react";
+import { useQuery } from "convex-helpers/react/cache";
+import { useAction } from "convex/react";
 import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 /**
