@@ -5,7 +5,7 @@
 ## Features
 
 - [x] Authentication with GitHub
-- [ ] Chat with multiple LLMs. Bring your own key via [OpenRouter](https://openrouter.ai)
+- [x] Chat with multiple LLMs. Bring your own key via [OpenRouter](https://openrouter.ai)
 - [ ] Per-user persistent chat history synced to Convex
 - [ ] Streamed responses
 - [ ] Resumable streams
@@ -13,6 +13,7 @@
 - [ ] Ability to share a conversation with another user via a public link
 - [ ] File and image attachment support
 - [ ] Web search via Jina
+- [x] User-provided API keys encrypted with AES-256
 
 ## Stack
 
@@ -41,6 +42,21 @@ There are two .env files used in this project that you must specify when working
 - `/apps/webapp/.env` - Environment variables for the webapp
   - `VITE_CONVEX_URL` - URL of the Convex server, e.g. “https://lively-dog-999.convex.cloud” which you can find in the Convex dashboard
 - `/packages/backend/.env` - Environment variables for the Convex server. This will be auto-generated for you when you run `pnpm dev:setup`
+  - `OPENROUTER_API_KEY` - Default OpenRouter API key used when users have not provided their own
+  - `ENCRYPTION_SECRET` - Base64url encoded 32 byte secret used to encrypt user API keys stored in Convex. Set this in your Convex dashboard so it is available to all deployed functions. Users can store their personal OpenRouter key from the **Settings** dialog in the sidebar.
+
+You can generate and upload a random encryption secret using the helper script:
+
+```bash
+pnpm set:encryption-secret
+```
+
+This creates a new base64url-encoded 32‑byte secret and configures it in your Convex project via
+`convex env set`.
+
+Users can optionally provide their own OpenRouter API key from the **Settings**
+dialog in the sidebar. Keys must start with `sk-or-` and are encrypted on the
+server using the `ENCRYPTION_SECRET` before storage.
 
 ## Convex Setup
 

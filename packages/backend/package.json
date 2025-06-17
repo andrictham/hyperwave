@@ -23,6 +23,7 @@
     "@convex-dev/agent": "^0.1.8",
     "@convex-dev/auth": "^0.0.87",
     "@openrouter/ai-sdk-provider": "^0.7.2",
-    "convex": "^1.24.8"
+    "convex": "^1.24.8",
+    "jose": "^5.10.0"
   }
 }

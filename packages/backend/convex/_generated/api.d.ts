@@ -9,6 +9,7 @@
  */
 
 import type * as agent from "../agent.js";
+import type * as apiKeyCipher from "../apiKeyCipher.js";
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
 import type * as chatActions from "../chatActions.js";
@@ -17,6 +18,7 @@ import type * as http from "../http.js";
 import type * as models from "../models.js";
 import type * as thread from "../thread.js";
 import type * as threadOwnership from "../threadOwnership.js";
+import type * as userSettings from "../userSettings.js";
 
 import type {
   ApiFromModules,
@@ -34,6 +36,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   agent: typeof agent;
+  apiKeyCipher: typeof apiKeyCipher;
   auth: typeof auth;
   chat: typeof chat;
   chatActions: typeof chatActions;
@@ -42,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   models: typeof models;
   thread: typeof thread;
   threadOwnership: typeof threadOwnership;
+  userSettings: typeof userSettings;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 
