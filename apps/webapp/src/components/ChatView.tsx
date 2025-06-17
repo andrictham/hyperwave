@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/logo";
 import { Markdown } from "@/components/markdown";
@@ -26,7 +26,17 @@ import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
 import { useMutation } from "convex/react";
-import { ArrowUp, Check, Loader2, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import {
+  ArrowDownCircle,
+  ArrowUp,
+  Check,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useStickToBottom } from "use-stick-to-bottom";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -413,6 +423,27 @@ export function ChatView({
 
   const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
 
+  const { scrollRef, contentRef, scrollToBottom, isAtBottom } = useStickToBottom({
+    resize: "smooth",
+    initial: "smooth",
+  });
+
+  /**
+   * Height of the chat form in pixels. Used to position the
+   * scroll-to-bottom button above the form with consistent spacing.
+   */
+  const [formHeight, setFormHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const node = formRef.current;
+    if (!node) return;
+    const update = () => setFormHeight(node.offsetHeight);
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    update();
+    return () => observer.disconnect();
+  }, []);
+
   /**
    * Submit handler for the message form. If a thread already exists it will
    * stream the message immediately. Otherwise a new thread is created first
@@ -433,6 +464,7 @@ export function ChatView({
         if (!threadId && onNewThread && result.threadId) {
           onNewThread(result.threadId);
         }
+        scrollToBottom();
       } catch (error) {
         console.error("Failed to send message:", error);
       }
@@ -459,35 +491,57 @@ export function ChatView({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="flex flex-col h-full">
+        <div className="relative flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
           <main
+            ref={scrollRef}
             className={cn(
-              "flex-1 overflow-y-auto p-4",
-              hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+              "relative flex-1 overflow-y-auto p-4",
+              hasMessages ? undefined : "flex flex-col items-center justify-center",
             )}
           >
-            {hasMessages &&
-              messageList.map((m) => (
-                <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
-                  {m.role === "user" ? (
-                    <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
-                      {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                        <div key={index}>{renderPart(part)}</div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="w-full">{renderMessageParts(m.parts)}</div>
-                  )}
-                </div>
-              ))}
-            {!threadId && (
-              <>
-                <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
-                <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
-              </>
-            )}
+            <div
+              ref={contentRef}
+              className={cn(
+                hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+              )}
+            >
+              {hasMessages &&
+                messageList.map((m) => (
+                  <div
+                    key={m.key}
+                    className={cn("flex w-full", m.role === "user" && "justify-end")}
+                  >
+                    {m.role === "user" ? (
+                      <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
+                        {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                          <div key={index}>{renderPart(part)}</div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="w-full">{renderMessageParts(m.parts)}</div>
+                    )}
+                  </div>
+                ))}
+              {!threadId && (
+                <>
+                  <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
+                  <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
+                </>
+              )}
+            </div>
           </main>
+          {!isAtBottom && (
+            <button
+              type="button"
+              onClick={() => scrollToBottom()}
+              className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
+              style={{ bottom: formHeight + 16 }}
+            >
+              <ArrowDownCircle className="h-6 w-6" />
+              <span className="sr-only">Scroll to bottom</span>
+            </button>
+          )}
           <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
             <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
               <Textarea
