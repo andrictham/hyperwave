@@ -51,16 +51,31 @@ export function Markdown({ children }: MarkdownProps) {
           const lang = langMatch[1];
           const loaded = highlighter.getLoadedLanguages();
           const langToUse = loaded.includes(lang) ? lang : "txt";
-          return (
-            <div
-              dangerouslySetInnerHTML={{
-                __html: highlighter.codeToHtml(code, {
-                  lang: langToUse,
-                  theme: "nord",
-                }),
-              }}
-            />
-          );
+          const html = highlighter.codeToHtml(code, {
+            lang: langToUse,
+            theme: "nord",
+          });
+          if (typeof window !== "undefined") {
+            const parsed = new DOMParser().parseFromString(html, "text/html");
+            const pre = parsed.body.querySelector("pre");
+            if (pre) {
+              const className = pre.className;
+              const style = { backgroundColor: pre.style.backgroundColor };
+              const inner = pre.innerHTML;
+              return (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(code)}
+                    className="absolute right-2 top-2 rounded bg-muted px-1 text-xs text-muted-foreground"
+                  >
+                    Copy
+                  </button>
+                  <pre className={className} style={style} dangerouslySetInnerHTML={{ __html: inner }} />
+                </div>
+              );
+            }
+          }
         }
         return <code className={className}>{codeChildren}</code>;
       },

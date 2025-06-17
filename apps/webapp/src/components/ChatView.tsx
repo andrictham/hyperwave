@@ -491,7 +491,7 @@ export function ChatView({
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <div className="relative flex flex-col h-full">
+        <div className="relative flex flex-col h-full w-full max-w-screen-md mx-auto">
           <ThreadHeader threadId={threadId} />
           <main
             ref={scrollRef}
