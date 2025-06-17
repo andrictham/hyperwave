@@ -20,8 +20,8 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
-import { useAction } from "convex/react";
-import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { useAction, useMutation } from "convex/react";
+import { ArrowUp, Check, Loader2, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -29,8 +29,36 @@ import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react"
 function ThreadHeader({ threadId }: { threadId?: string }) {
   const navigate = useNavigate();
   const thread = useQuery(api.chat.getThread, threadId ? { threadId } : "skip");
-  const updateThread = useAction(api.chatActions.updateThread);
-  const deleteThread = useAction(api.chatActions.deleteThread);
+  const updateThread = useMutation(api.thread.updateThread).withOptimisticUpdate(
+    (store, { threadId, title }) => {
+      if (!title) return;
+      const existing = store.getQuery(api.chat.getThread, { threadId });
+      if (existing) {
+        store.setQuery(api.chat.getThread, { threadId }, { ...existing, title });
+      }
+      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+        if (!value) continue;
+        store.setQuery(
+          api.chat.listThreads,
+          args,
+          value.map((t) => (t._id === threadId ? { ...t, title } : t)),
+        );
+      }
+    },
+  );
+  const deleteThread = useMutation(api.thread.deleteThread).withOptimisticUpdate(
+    (store, { threadId }) => {
+      store.setQuery(api.chat.getThread, { threadId }, undefined);
+      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+        if (!value) continue;
+        store.setQuery(
+          api.chat.listThreads,
+          args,
+          value.filter((t) => t._id !== threadId),
+        );
+      }
+    },
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -503,8 +531,12 @@ export function ChatView({
                   className="rounded-full"
                   disabled={!modelsLoaded || !prompt.trim() || isStreaming}
                 >
-                  <ArrowUp className="h-4 w-4" />
-                  <span className="sr-only">Send</span>
+                  {isStreaming ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowUp className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">{isStreaming ? "Sending..." : "Send"}</span>
                 </Button>
               </div>
             </div>
