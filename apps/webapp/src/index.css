@@ -421,3 +421,26 @@ body {
     @apply my-8 border-t;
   }
 }
+
+/* Scrollbar fade utility */
+.scrollbar-fade {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.scrollbar-fade:hover {
+  scrollbar-color: var(--color-stone-8) transparent;
+}
+.scrollbar-fade::-webkit-scrollbar {
+  height: 6px;
+}
+.scrollbar-fade::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-fade::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 3px;
+}
+.scrollbar-fade:hover::-webkit-scrollbar-thumb {
+  background-color: var(--color-stone-8);
+}
+

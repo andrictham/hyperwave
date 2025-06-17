@@ -379,7 +379,7 @@ export function ChatView({
   }, [threadId]);
 
   // // TODO: Old implementation. To remove.
-  // const messages = threadId
+              "flex-1 overflow-y-auto p-4 w-full max-w-none sm:max-w-3xl mx-auto",
   //   ? useThreadMessages(
   //       api.chat.listThreadMessages,
   //       { threadId },

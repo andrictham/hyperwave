@@ -71,7 +71,7 @@ export function Markdown({ children }: MarkdownProps) {
           const styleMatch = /style="([^"]*)"/.exec(html);
           const inner = html.replace(/^<pre[^>]*>/, "").replace(/<\/pre>$/, "");
           return (
-            <pre className={cn(classMatch?.[1], "relative group overflow-auto rounded-md p-2")}
+            <pre className={cn(classMatch?.[1], "relative group overflow-auto scrollbar-fade rounded-md p-2")}
                  style={styleStringToObject(styleMatch?.[1])}
             >
               <CopyButton text={code} />
@@ -83,7 +83,7 @@ export function Markdown({ children }: MarkdownProps) {
       },
       table({ children }) {
         return (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-fade">
             <table>{children}</table>
           </div>
         );
@@ -92,7 +92,7 @@ export function Markdown({ children }: MarkdownProps) {
   }, [highlighter]);
 
   return (
-    <div className="prose dark:prose-invert w-full max-w-none sm:max-w-prose mx-auto">
+    <div className="prose dark:prose-invert w-full max-w-none sm:max-w-3xl mx-auto">
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {children}
       </ReactMarkdown>
