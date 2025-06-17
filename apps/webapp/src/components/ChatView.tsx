@@ -404,6 +404,10 @@ export function ChatView({
     optimisticallySendMessage(api.chat.listThreadMessages),
   );
 
+  const createThread = useMutation(api.chat.createThread);
+
+  const [isCreatingThread, setIsCreatingThread] = useState(false);
+
   const messageList: UIMessage[] = messages ? toUIMessages(messages.results ?? []) : [];
   const hasMessages = messageList.length > 0;
 
@@ -413,15 +417,33 @@ export function ChatView({
     e.preventDefault();
     const text = prompt.trim();
     if (!text || !modelsLoaded || !model) return;
-    setPrompt("");
-    try {
-      const result = await sendMessage({ threadId, prompt: text, model });
-      formRef.current?.reset();
-      if (!threadId && onNewThread && result.threadId) {
-        onNewThread(result.threadId);
+    if (threadId) {
+      setPrompt("");
+      try {
+        const result = await sendMessage({ threadId, prompt: text, model });
+        formRef.current?.reset();
+        if (!threadId && onNewThread && result.threadId) {
+          onNewThread(result.threadId);
+        }
+      } catch (error) {
+        console.error("Failed to send message:", error);
       }
-    } catch (error) {
-      console.error("Failed to send message:", error);
+    } else {
+      setIsCreatingThread(true);
+      try {
+        const newThreadId = await createThread({});
+        // Optimistically send the message but don't await it
+        void sendMessage({ threadId: newThreadId, prompt: text, model });
+        formRef.current?.reset();
+        setPrompt("");
+        if (onNewThread) {
+          onNewThread(newThreadId);
+        }
+      } catch (error) {
+        console.error("Failed to create thread:", error);
+      } finally {
+        setIsCreatingThread(false);
+      }
     }
   };
 
@@ -472,8 +494,12 @@ export function ChatView({
                 }}
                 minRows={3}
                 maxRows={6}
+                disabled={isCreatingThread || isStreaming}
                 placeholder="Type a message..."
-                className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0"
+                className={cn(
+                  "border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0",
+                  isCreatingThread && "opacity-50",
+                )}
               />
               <div className="flex items-end justify-between">
                 <Popover
@@ -550,14 +576,14 @@ export function ChatView({
                   type="submit"
                   size="icon"
                   className="rounded-full"
-                  disabled={!modelsLoaded || !prompt.trim() || isStreaming}
+                  disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
                 >
-                  {isStreaming ? (
+                  {isCreatingThread ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <ArrowUp className="h-4 w-4" />
                   )}
-                  <span className="sr-only">{isStreaming ? "Sending..." : "Send"}</span>
+                  <span className="sr-only">Send</span>
                 </Button>
               </div>
             </div>
