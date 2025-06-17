@@ -13,6 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
@@ -328,6 +333,41 @@ function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
   );
 }
 
+/** Render an assistant message with streaming states. */
+function AssistantMessage({ message }: { message: UIMessage }) {
+  const [open, setOpen] = useState(false);
+
+  const isStreaming = message.status === "streaming";
+  const reasoningParts = message.parts.filter((p) => p.type === "reasoning");
+  const otherParts = message.parts.filter((p) => p.type !== "reasoning");
+  const hasText = otherParts.some((p) => p.type === "text");
+
+  if (isStreaming && !hasText) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Reasoning…</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {otherParts.length > 0 && renderMessageParts(otherParts)}
+      {!isStreaming && reasoningParts.length > 0 && (
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <CollapsibleTrigger className="text-xs text-muted-foreground underline">
+            {open ? "Hide reasoning" : "Show reasoning"}
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-1 space-y-2">
+            {renderMessageParts(reasoningParts)}
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </div>
+  );
+}
+
 /**
  * Primary chat view showing the list of messages for a thread and a form to
  * compose new messages. A model can be selected per message via a popover
@@ -527,7 +567,9 @@ export function ChatView({
                         ))}
                       </div>
                     ) : (
-                      <div className="w-full">{renderMessageParts(m.parts)}</div>
+                      <div className="w-full">
+                        <AssistantMessage message={m} />
+                      </div>
                     )}
                   </div>
                 ))}
