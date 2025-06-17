@@ -493,163 +493,167 @@ export function ChatView({
       <SidebarInset>
         <div className="relative flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
-          <main
-            ref={scrollRef}
-            className={cn(
-              "relative flex-1 overflow-y-auto p-4",
-              hasMessages ? undefined : "flex flex-col items-center justify-center",
-            )}
-          >
-            <div
-              ref={contentRef}
+          <div className="mx-auto flex w-full max-w-[768px] flex-1 flex-col">
+            <main
+              ref={scrollRef}
               className={cn(
-                hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
+                "relative flex-1 overflow-y-auto p-4",
+                hasMessages ? undefined : "flex flex-col items-center justify-center",
               )}
             >
-              {hasMessages &&
-                messageList.map((m) => (
-                  <div
-                    key={m.key}
-                    className={cn("flex w-full", m.role === "user" && "justify-end")}
-                  >
-                    {m.role === "user" ? (
-                      <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
-                        {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-                          <div key={index}>{renderPart(part)}</div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="w-full">{renderMessageParts(m.parts)}</div>
-                    )}
-                  </div>
-                ))}
-              {!threadId && (
-                <>
-                  <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
-                  <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
-                </>
-              )}
-            </div>
-          </main>
-          {!isAtBottom && (
-            <button
-              type="button"
-              onClick={() => scrollToBottom()}
-              className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
-              style={{ bottom: formHeight + 16 }}
-            >
-              <ArrowDownCircle className="h-6 w-6" />
-              <span className="sr-only">Scroll to bottom</span>
-            </button>
-          )}
-          <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
-            <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
-              <Textarea
-                ref={inputRef}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    formRef.current?.requestSubmit();
-                  }
-                }}
-                minRows={3}
-                maxRows={6}
-                disabled={isCreatingThread || isStreaming}
-                placeholder="Type a message..."
+              <div
+                ref={contentRef}
                 className={cn(
-                  "border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0",
-                  isCreatingThread && "opacity-50",
+                  hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
                 )}
-              />
-              <div className="flex items-end justify-between">
-                <Popover
-                  open={modelMenuOpen}
-                  onOpenChange={(open) => {
-                    setModelMenuOpen(open);
-                    if (!open) {
-                      // Focus the textarea when the popover closes
-                      inputRef.current?.focus();
+              >
+                {hasMessages &&
+                  messageList.map((m) => (
+                    <div
+                      key={m.key}
+                      className={cn("flex w-full", m.role === "user" && "justify-end")}
+                    >
+                      {m.role === "user" ? (
+                        <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] min-w-[10rem] w-fit">
+                          {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+                            <div key={index}>{renderPart(part)}</div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="w-full">{renderMessageParts(m.parts)}</div>
+                      )}
+                    </div>
+                  ))}
+                {!threadId && (
+                  <>
+                    <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
+                    <HyperwaveLogoHorizontal className="hidden sm:block h-12 sm:h-16 md:h-18 lg:h-auto w-auto shrink-0 text-primary" />
+                  </>
+                )}
+              </div>
+            </main>
+            {!isAtBottom && (
+              <button
+                type="button"
+                onClick={() => scrollToBottom()}
+                className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
+                style={{ bottom: formHeight + 16 }}
+              >
+                <ArrowDownCircle className="h-6 w-6" />
+                <span className="sr-only">Scroll to bottom</span>
+              </button>
+            )}
+            <form ref={formRef} onSubmit={handleSubmit} className="px-4 pb-4 sm:px-6 sm:pb-6">
+              <div className="bg-background border rounded-xl p-3 shadow-sm flex flex-col gap-3">
+                <Textarea
+                  ref={inputRef}
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault();
+                      formRef.current?.requestSubmit();
                     }
                   }}
-                >
-                  <PopoverTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
-                      {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="start"
-                    className="p-0"
-                    onCloseAutoFocus={(e) => {
-                      e.preventDefault();
-                      inputRef.current?.focus();
+                  minRows={3}
+                  maxRows={6}
+                  disabled={isCreatingThread || isStreaming}
+                  placeholder="Type a message..."
+                  className={cn(
+                    "border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0",
+                    isCreatingThread && "opacity-50",
+                  )}
+                />
+                <div className="flex items-end justify-between">
+                  <Popover
+                    open={modelMenuOpen}
+                    onOpenChange={(open) => {
+                      setModelMenuOpen(open);
+                      if (!open) {
+                        // Focus the textarea when the popover closes
+                        inputRef.current?.focus();
+                      }
                     }}
                   >
-                    <div className="p-2 border-b">
-                      <Input
-                        value={modelFilter}
-                        onChange={(e) => setModelFilter(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowDown") {
-                            e.preventDefault();
-                            setActiveModelIndex((i) => Math.min(i + 1, filteredModels.length - 1));
-                          } else if (e.key === "ArrowUp") {
-                            e.preventDefault();
-                            setActiveModelIndex((i) => Math.max(i - 1, 0));
-                          } else if (e.key === "Enter") {
-                            e.preventDefault();
-                            const m = filteredModels[activeModelIndex];
-                            if (m) {
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
+                        {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="p-0"
+                      onCloseAutoFocus={(e) => {
+                        e.preventDefault();
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      <div className="p-2 border-b">
+                        <Input
+                          value={modelFilter}
+                          onChange={(e) => setModelFilter(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowDown") {
+                              e.preventDefault();
+                              setActiveModelIndex((i) =>
+                                Math.min(i + 1, filteredModels.length - 1),
+                              );
+                            } else if (e.key === "ArrowUp") {
+                              e.preventDefault();
+                              setActiveModelIndex((i) => Math.max(i - 1, 0));
+                            } else if (e.key === "Enter") {
+                              e.preventDefault();
+                              const m = filteredModels[activeModelIndex];
+                              if (m) {
+                                setModel(m.id);
+                                setModelMenuOpen(false);
+                              }
+                            }
+                          }}
+                          placeholder="Search models..."
+                          className="h-8"
+                        />
+                      </div>
+                      <div className="max-h-64 overflow-y-auto py-1">
+                        {filteredModels.map((m: ModelInfo, idx: number) => (
+                          <button
+                            key={m.id}
+                            ref={(el) => {
+                              itemRefs.current[idx] = el;
+                            }}
+                            type="button"
+                            onClick={() => {
                               setModel(m.id);
                               setModelMenuOpen(false);
-                            }
-                          }
-                        }}
-                        placeholder="Search models..."
-                        className="h-8"
-                      />
-                    </div>
-                    <div className="max-h-64 overflow-y-auto py-1">
-                      {filteredModels.map((m: ModelInfo, idx: number) => (
-                        <button
-                          key={m.id}
-                          ref={(el) => {
-                            itemRefs.current[idx] = el;
-                          }}
-                          type="button"
-                          onClick={() => {
-                            setModel(m.id);
-                            setModelMenuOpen(false);
-                          }}
-                          className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${
-                            idx === activeModelIndex ? "bg-accent text-accent-foreground" : ""
-                          } ${m.id === model ? "font-semibold" : ""}`}
-                        >
-                          <span>{m.name}</span>
-                          {m.id === model && <Check className="w-4 h-4" />}
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="rounded-full"
-                  disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
-                >
-                  {isCreatingThread ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ArrowUp className="h-4 w-4" />
-                  )}
-                  <span className="sr-only">Send</span>
-                </Button>
+                            }}
+                            className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${
+                              idx === activeModelIndex ? "bg-accent text-accent-foreground" : ""
+                            } ${m.id === model ? "font-semibold" : ""}`}
+                          >
+                            <span>{m.name}</span>
+                            {m.id === model && <Check className="w-4 h-4" />}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <Button
+                    type="submit"
+                    size="icon"
+                    className="rounded-full"
+                    disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
+                  >
+                    {isCreatingThread ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ArrowUp className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">Send</span>
+                  </Button>
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
