@@ -24,6 +24,7 @@ import {
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
+import { Route as RootRoute } from "../routes/__root";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
@@ -302,7 +303,9 @@ export function ChatView({
   const [prompt, setPrompt] = useState("");
   const modelsConfig = useQuery(api.models.listModels);
   const modelsLoaded = modelsConfig !== undefined;
-  const [model, setModel] = useState<string>();
+  const rootSearch = RootRoute.useSearch();
+  const navigate = RootRoute.useNavigate();
+  const model = rootSearch.model;
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [modelFilter, setModelFilter] = useState("");
   const [activeModelIndex, setActiveModelIndex] = useState(0);
@@ -311,9 +314,15 @@ export function ChatView({
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useEffect(() => {
     if (modelsConfig && !model) {
-      setModel(modelsConfig.defaultModel);
+      navigate({
+        search: (prev: typeof rootSearch) => ({
+          ...prev,
+          model: modelsConfig.defaultModel,
+        }),
+        replace: true,
+      });
     }
-  }, [modelsConfig, model]);
+  }, [modelsConfig, model, navigate]);
 
   const filteredModels = useMemo(() => {
     if (!modelsConfig) return [] as ModelInfo[];
@@ -371,9 +380,16 @@ export function ChatView({
   // TODO: Old implementation. To remove.
   //  const sendMessage = useAction(api.chatActions.sendMessage);
 
-  const sendMessage = useMutation(api.chat.streamMessageAsynchronously).withOptimisticUpdate(
-    optimisticallySendMessage(api.chat.listThreadMessages),
-  );
+  const sendMessage = useMutation(
+    api.chat.streamMessageAsynchronously,
+  ).withOptimisticUpdate((store, args) => {
+    if (args.threadId) {
+      optimisticallySendMessage(api.chat.listThreadMessages)(store, {
+        threadId: args.threadId,
+        prompt: args.prompt,
+      });
+    }
+  });
 
   const messageList: UIMessage[] = messages ? toUIMessages(messages.results ?? []) : [];
   const hasMessages = messageList.length > 0;
@@ -388,7 +404,7 @@ export function ChatView({
     try {
       const result = await sendMessage({ threadId, prompt: text, model });
       formRef.current?.reset();
-      if (!threadId && onNewThread && result.threadId) {
+      if (!threadId && onNewThread && result?.threadId) {
         onNewThread(result.threadId);
       }
     } catch (error) {
@@ -485,7 +501,13 @@ export function ChatView({
                             e.preventDefault();
                             const m = filteredModels[activeModelIndex];
                             if (m) {
-                              setModel(m.id);
+                              navigate({
+                                search: (prev: typeof rootSearch) => ({
+                                  ...prev,
+                                  model: m.id,
+                                }),
+                                replace: true,
+                              });
                               setModelMenuOpen(false);
                             }
                           }
@@ -503,7 +525,13 @@ export function ChatView({
                           }}
                           type="button"
                           onClick={() => {
-                            setModel(m.id);
+                            navigate({
+                              search: (prev: typeof rootSearch) => ({
+                                ...prev,
+                                model: m.id,
+                              }),
+                              replace: true,
+                            });
                             setModelMenuOpen(false);
                           }}
                           className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${

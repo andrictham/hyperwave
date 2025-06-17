@@ -14,6 +14,9 @@ importers:
       '@convex-dev/eslint-plugin':
         specifier: 0.0.1-alpha.4
         version: 0.0.1-alpha.4(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)
+      '@tanstack/zod-adapter':
+        specifier: ^1.121.21
+        version: 1.121.21(@tanstack/react-router@1.121.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(zod@3.25.64)
     devDependencies:
       '@eslint/js':
         specifier: ^9.28.0
@@ -2223,6 +2226,13 @@ packages:
   '@tanstack/virtual-file-routes@1.120.17':
     resolution: {integrity: sha512-Ssi+yKcjG9ru02ieCpUBF7QQBEKGB7WQS1R9va3GHu+Oq9WjzmJ4rifzdugjTeKD3yfT7d1I+pOxRhoWog6CHw==}
     engines: {node: '>=12'}
+
+  '@tanstack/zod-adapter@1.121.21':
+    resolution: {integrity: sha512-GlZUOZQ1IXzqJ93EJ4K6GImB3/H59eR3JoQjZfbuWKQ35u+sCEnfg4rAGKshpGfrsWnI33hblPiY/wWb22WKWw==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      '@tanstack/react-router': '>=1.43.2'
+      zod: ^3.23.8
 
   '@tybys/wasm-util@0.8.3':
     resolution: {integrity: sha512-Z96T/L6dUFFxgFJ+pQtkPpne9q7i6kIPYCFnQBHSgSPV9idTsKfIhCss0h5iM9irweZCatkrdeP8yi5uM1eX6Q==}
@@ -6369,6 +6379,11 @@ snapshots:
   '@tanstack/store@0.7.1': {}
 
   '@tanstack/virtual-file-routes@1.120.17': {}
+
+  '@tanstack/zod-adapter@1.121.21(@tanstack/react-router@1.121.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(zod@3.25.64)':
+    dependencies:
+      '@tanstack/react-router': 1.121.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      zod: 3.25.64
 
   '@tybys/wasm-util@0.8.3':
     dependencies:

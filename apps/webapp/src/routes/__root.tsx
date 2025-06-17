@@ -8,7 +8,10 @@ import {
   HeadContent,
   Outlet,
   useRouterState,
+  retainSearchParams,
 } from "@tanstack/react-router";
+import { z } from "zod";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 
@@ -16,7 +19,15 @@ import splashImage from "../assets/login-splash.png";
 
 import "../index.css";
 
+const searchSchema = z.object({
+  model: z.string().optional(),
+});
+
 export const Route = createRootRouteWithContext()({
+  validateSearch: zodValidator(searchSchema),
+  search: {
+    middlewares: [retainSearchParams(["model"])],
+  },
   component: RootComponent,
   head: () => ({
     meta: [
