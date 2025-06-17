@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useAutoScroll } from "@/hooks/use-auto-scroll";
 import { cn } from "@/lib/utils";
 import {
   optimisticallySendMessage,
@@ -337,6 +338,7 @@ export function ChatView({
   const [activeModelIndex, setActiveModelIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useEffect(() => {
     if (modelsConfig && !model) {
@@ -409,6 +411,8 @@ export function ChatView({
 
   const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
 
+  useAutoScroll(messageContainerRef, [messageList.length, isStreaming]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
@@ -432,6 +436,7 @@ export function ChatView({
         <div className="flex flex-col h-full">
           <ThreadHeader threadId={threadId} />
           <main
+            ref={messageContainerRef}
             className={cn(
               "flex-1 overflow-y-auto p-4",
               hasMessages ? "space-y-4" : "flex flex-col items-center justify-center",
