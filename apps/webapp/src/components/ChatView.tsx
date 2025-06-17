@@ -21,7 +21,7 @@ import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
 import { useAction, useMutation } from "convex/react";
-import { ArrowUp, Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { ArrowUp, Check, Loader2, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
