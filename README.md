@@ -111,4 +111,11 @@ hyperwave/
 
 # Credits
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Convex, and more.
+## Core Contributors
+- ideosyncretic
+- andrictham
+
+## Dependencies and Tools Used
+- Thanks to the Convex team, and Ian Macartney in particular, for their work on the [Convex Agent component](https://github.com/get-convex/agent).
+- This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Convex, and more.
+- UI Theming was done with the help of [tweakcn](https://tweakcn.com/)
