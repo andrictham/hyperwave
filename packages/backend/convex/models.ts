@@ -11,6 +11,21 @@ import { query } from "./_generated/server";
  */
 export const allowedModels = [
   {
+    id: "qwen/qwen3-32b-04-28:free",
+    name: "Qwen3 32B",
+    gateway: "openrouter",
+  },
+  {
+    id: "qwen/qwq-32b:free",
+    name: "Qwen QWQ 32B",
+    gateway: "openrouter",
+  },
+  {
+    id: "mistralai/devstral-small:free",
+    name: "Devstral Small",
+    gateway: "openrouter",
+  },
+  {
     id: "deepseek/deepseek-chat-v3-0324:free",
     name: "DeepSeek Chat v3",
     gateway: "openrouter",
@@ -26,38 +41,13 @@ export const allowedModels = [
     gateway: "openrouter",
   },
   {
-    id: "moonshotai/kimi-dev-72b:free",
-    name: "Kimi Dev 72B",
-    gateway: "openrouter",
-  },
-  {
     id: "mistralai/mistral-nemo:free",
     name: "Mistral Nemo",
     gateway: "openrouter",
   },
   {
-    id: "mistralai/devstral-small:free",
-    name: "Devstral Small",
-    gateway: "openrouter",
-  },
-  {
-    id: "qwen/qwq-32b:free",
-    name: "Qwen QWQ 32B",
-    gateway: "openrouter",
-  },
-  {
-    id: "qwen/qwen3-32b-04-28:free",
-    name: "Qwen3 32B",
-    gateway: "openrouter",
-  },
-  {
     id: "meta-llama/llama-3.3-8b-instruct:free",
     name: "Llama 3.3 8B Instruct",
-    gateway: "openrouter",
-  },
-  {
-    id: "google/gemma-3-27b-it:free",
-    name: "Gemma 3 27B",
     gateway: "openrouter",
   },
 ] as const;
