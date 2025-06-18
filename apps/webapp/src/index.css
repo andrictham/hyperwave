@@ -454,3 +454,22 @@ body {
   animation: terminal-cursor 1s steps(1) infinite;
   box-shadow: 0 0 4px hsl(var(--color-primary));
 }
+
+.prose-inline {
+  @apply text-base md:text-lg leading-7;
+}
+
+.with-terminal-cursor {
+  display: inline-block;
+}
+
+.with-terminal-cursor::after {
+  content: "";
+  display: inline-block;
+  width: 0.6em;
+  height: 1em;
+  margin-left: 0.1em;
+  background: hsl(var(--color-primary));
+  animation: terminal-cursor 1s steps(1) infinite;
+  box-shadow: 0 0 4px hsl(var(--color-primary));
+}

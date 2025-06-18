@@ -236,7 +236,10 @@ function hasResult(value: unknown): value is { result: unknown } {
 }
 
 /** Render a single message part based on its type. */
-function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
+function renderPart(
+  part: UIMessage["parts"][number],
+  showCursor?: boolean,
+): React.ReactNode {
   switch (part.type) {
     case "text": {
       // Normalise streaming glitches:
@@ -247,6 +250,12 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
       //    never sees it.
       const raw = typeof part.text === "string" ? part.text : "";
       const cleaned = raw.startsWith("undefined") ? raw.slice("undefined".length) : raw;
+
+      if (showCursor) {
+        return cleaned ? (
+          <span className="with-terminal-cursor whitespace-pre-wrap">{cleaned}</span>
+        ) : null;
+      }
 
       return cleaned ? <Markdown>{cleaned}</Markdown> : null;
     }
@@ -319,14 +328,12 @@ function renderMessageParts(parts: UIMessage["parts"], showCursor?: boolean): Re
         ([part, originalIdx]) => (
           <div
             key={`${part.type}-${originalIdx}`}
-            className={cn(part.type === "text" ? "mt-2 flex items-baseline" : "mb-2")}
+            className={cn(part.type === "text" ? "mt-2" : "mb-2")}
           >
-            <span className={cn(part.type === "text" && "inline-block")}>{renderPart(part)}</span>
-            {showCursor &&
-              part.type === "text" &&
-              originalIdx === lastTextIdx && (
-                <span className="terminal-cursor" />
-              )}
+            {renderPart(
+              part,
+              showCursor && part.type === "text" && originalIdx === lastTextIdx,
+            )}
           </div>
         ),
       )}
