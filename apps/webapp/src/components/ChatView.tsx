@@ -21,7 +21,7 @@ import { useMutation } from "convex/react";
 import { ArrowDown, ArrowUp, Check, Loader2 } from "lucide-react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
-import { ThreadHeader } from "./ui/ThreadHeader";
+import { ThreadHeader } from "./ThreadHeader";
 
 /** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {
