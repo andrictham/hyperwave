@@ -13,16 +13,16 @@
 
 ### Planned
 - [ ] Bring your own key via OpenRouter
-- [ ] Ability to share a conversation with another user via a public link
-- [ ] File and image attachment support
 - [ ] Web search via Jina
-- [ ] Chat branching
+- [ ] File and image attachment support
+- [ ] Chat branching (when the Convex Agent component supports it)
+- [ ] Edit message and message versioning
 - [ ] Share chats via a public link
 
 ### Known Issues
 The following aren’t yet implemented due to issues in the Convex Agent component:
 - [ ] Reasoning tokens aren’t streaming in properly
-- [ ] No ability to stop generating in the middle of a stream
+- [ ] No ability to stop generating in the middle of a stream ([get-convex/agent#61](https://github.com/get-convex/agent/issues/61))
 
 ## Stack
 
