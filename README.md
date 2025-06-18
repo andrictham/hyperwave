@@ -4,15 +4,25 @@
 
 ## Features
 
-- [x] Authentication with GitHub
-- [ ] Chat with multiple LLMs. Bring your own key via [OpenRouter](https://openrouter.ai)
-- [ ] Per-user persistent chat history synced to Convex
-- [ ] Streamed responses
-- [ ] Resumable streams
-- [x] Syntax highlighting of LLM responses via Shiki
+- Fast client-side navigation with TanStack Router
+- Authentication with GitHub via Convex Auth
+- Chat with multiple LLMs via OpenRouter
+- Live chat history synchronization via Convex DB
+- Resumable Streams via Convex Agent: Continue generation after page refresh
+- Syntax highlighting of LLM responses via Shiki
+
+### Planned
+- [ ] Bring your own key via OpenRouter
 - [ ] Ability to share a conversation with another user via a public link
 - [ ] File and image attachment support
 - [ ] Web search via Jina
+- [ ] Chat branching
+- [ ] Share chats via a public link
+
+### Known Issues
+The following aren’t yet implemented due to issues in the Convex Agent component:
+- [ ] Reasoning tokens aren’t streaming in properly
+- [ ] No ability to stop generating in the middle of a stream
 
 ## Stack
 
