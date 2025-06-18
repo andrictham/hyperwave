@@ -22,10 +22,8 @@
 
 ### Known Issues
 
-- [ ] Layout doesn’t fully work on mobile
-- [ ] Provider errors aren't properly handled in the UI
-      The following aren’t yet implemented due to issues in the Convex Agent component:
-- [ ] Reasoning tokens aren’t streaming in properly
+- [ ] Layout isn’t fully responsive (horizontal overflow on some breakpoints due to Markdown tables)
+- [ ] Errors when receiving AI responses aren't properly handled in the UI
 - [ ] No ability to stop generating in the middle of a stream ([get-convex/agent#61](https://github.com/get-convex/agent/issues/61))
 
 ## Stack
