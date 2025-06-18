@@ -28,17 +28,17 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
 import { useMutation } from "convex/react";
-import { Check, MessageSquarePlus, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { Check, MessagesSquare, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
 
 import { ModeToggle } from "./mode-toggle";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
 /** Component shown when the user has no chat threads. */
-function NoThreads(): JSX.Element {
+function NoThreads(): React.JSX.Element {
   return (
-    <div className="flex flex-col items-center gap-2 p-4 text-center text-sm text-muted-foreground">
-      <MessageSquarePlus className="h-6 w-6" />
+    <div className="flex flex-col items-center gap-3 p-4 text-center text-sm text-muted-foreground/40">
+      <MessagesSquare className="h-8 w-8" />
       <span>No chats yet. Start a new one below.</span>
     </div>
   );
@@ -150,7 +150,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuItem key={t._id} className="flex items-center">
                     <SidebarMenuButton
                       asChild
-                      className={`flex-1 truncate overflow-hidden px-1  ${editingThreadId === t._id ? "hidden" : ""}`}
+                      size="default"
+                      className={`${editingThreadId === t._id ? "hidden" : ""}`}
                     >
                       <Link to="/chat/$threadId" params={{ threadId: t._id }} className="truncate">
                         {t.title ?? "Untitled"}
