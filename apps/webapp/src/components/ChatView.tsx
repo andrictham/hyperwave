@@ -27,7 +27,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
 import { useMutation } from "convex/react";
 import {
-  ArrowDownCircle,
+  ArrowDown,
   ArrowUp,
   Check,
   Loader2,
@@ -589,17 +589,19 @@ export function ChatView({
               )}
             </div>
           </main>
-          {!isAtBottom && (
-            <button
-              type="button"
-              onClick={() => scrollToBottom()}
-              className="absolute left-1/2 -translate-x-1/2 rounded-full bg-background p-1 shadow"
-              style={{ bottom: formHeight + 16 }}
-            >
-              <ArrowDownCircle className="h-6 w-6" />
-              <span className="sr-only">Scroll to bottom</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => scrollToBottom()}
+            className={cn(
+              "absolute left-1/2 -translate-x-1/2 rounded-full bg-muted p-2 drop-shadow-md  transition-opacity duration-300",
+              !isAtBottom ? "opacity-100" : "opacity-0 pointer-events-none",
+            )}
+            style={{ bottom: formHeight + 16 }}
+            aria-hidden={isAtBottom}
+          >
+            <ArrowDown className="h-4 w-4" />
+            <span className="sr-only">Scroll to bottom</span>
+          </button>
           <form
             ref={formRef}
             onSubmit={handleSubmit}
