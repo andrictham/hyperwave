@@ -253,7 +253,9 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
     case "reasoning":
       return (
         <div className="mb-2 prose p-4 bg-muted/80 rounded-lg">
-          <div className="text-md text-muted-foreground whitespace-pre-wrap">{part.reasoning}</div>
+          <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {part.reasoning.trimStart()}
+          </div>
         </div>
       );
     case "tool-invocation":
