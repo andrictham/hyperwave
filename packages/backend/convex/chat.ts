@@ -51,12 +51,11 @@ export const streamMessageAsynchronously = mutation({
     const { messageId } = await agent.saveMessage(ctx, {
       threadId,
       prompt,
-      // we're in a mutation, so skip embeddings for now. They'll be generated
-      // lazily when streaming text.
+      // we're in a mutation, so skip embeddings for now. They'll be generated lazily when streaming text.
       skipEmbeddings: true,
     });
 
-    // Auto-title thread if title is "Untitled"
+    // Auto-title untitled thread
     await ctx.scheduler.runAfter(0, internal.thread.maybeUpdateThreadTitle, {
       threadId,
     });
