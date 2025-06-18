@@ -4,15 +4,25 @@
 
 ## Features
 
-- [x] Authentication with GitHub
-- [ ] Chat with multiple LLMs. Bring your own key via [OpenRouter](https://openrouter.ai)
-- [ ] Per-user persistent chat history synced to Convex
-- [ ] Streamed responses
-- [ ] Resumable streams
-- [x] Syntax highlighting of LLM responses via Shiki
-- [ ] Ability to share a conversation with another user via a public link
-- [ ] File and image attachment support
+- Fast client-side navigation with TanStack Router
+- Authentication with GitHub via Convex Auth
+- Chat with multiple LLMs via OpenRouter
+- Live chat history synchronization via Convex DB
+- Resumable Streams via Convex Agent: Continue generation after page refresh
+- Syntax highlighting of LLM responses via Shiki
+
+### Planned
+- [ ] Bring your own key via OpenRouter
 - [ ] Web search via Jina
+- [ ] File and image attachment support
+- [ ] Chat branching (when the Convex Agent component supports it)
+- [ ] Edit message and message versioning
+- [ ] Share chats via a public link
+
+### Known Issues
+The following aren’t yet implemented due to issues in the Convex Agent component:
+- [ ] Reasoning tokens aren’t streaming in properly
+- [ ] No ability to stop generating in the middle of a stream ([get-convex/agent#61](https://github.com/get-convex/agent/issues/61))
 
 ## Stack
 
@@ -101,4 +111,11 @@ hyperwave/
 
 # Credits
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Convex, and more.
+## Core Contributors
+- ideosyncretic
+- andrictham
+
+## Dependencies and Tools Used
+- Thanks to the Convex team, and Ian Macartney in particular, for their work on the [Convex Agent component](https://github.com/get-convex/agent).
+- This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Convex, and more.
+- UI Theming was done with the help of [tweakcn](https://tweakcn.com/)
