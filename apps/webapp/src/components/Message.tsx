@@ -1,7 +1,9 @@
-import { useState, type JSX } from "react";
+import { type JSX } from "react";
 import { Markdown } from "@/components/markdown";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "@convex-dev/agent/react";
+
+import { ReasoningDetails } from "./ui/reasoning-details";
 
 /** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {
@@ -25,10 +27,8 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
     }
     case "reasoning":
       return (
-        <div className="mb-2 prose p-4 bg-muted/80 rounded-lg">
-          <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-            {part.reasoning.trimStart()}
-          </div>
+        <div className="w-full">
+          <Markdown>{part.reasoning.trimStart()}</Markdown>
         </div>
       );
     case "tool-invocation":
@@ -72,7 +72,6 @@ function renderParts(parts: UIMessage["parts"]): JSX.Element[] {
  */
 export function Message({ m }: { m: UIMessage }) {
   // Reasoning toggle
-  const [isOpen, setIsOpen] = useState(true);
   const isStreaming = m.status === "streaming";
   const hasText = m.parts.some((p) => p.type === "text");
   const reasoning = m.parts.filter((p) => p.type === "reasoning");
@@ -89,22 +88,16 @@ export function Message({ m }: { m: UIMessage }) {
       ) : m.role === "assistant" ? (
         <div className="w-full">
           {reasoning.length > 0 && (
-            <details
-              className="prose"
-              open={isOpen}
-              onToggle={(e) => setIsOpen((e.currentTarget as HTMLDetailsElement).open)}
-            >
-              <summary className="rounded-lg p-4 text-sm text-accent-foreground/80 bg-accent/100 dark:bg-accent/20 hover:opacity-85 active:opacity-75 transition-all duration-200 ease-in-out select-none cursor-pointer">
-                {isOpen ? "Hide reasoning" : "Show reasoning"}
-              </summary>
-
-              <div className="mt-1">{renderParts(reasoning)}</div>
-            </details>
+            <div className="mb-10">
+              <ReasoningDetails isStreaming={isStreaming && !hasText}>
+                {renderParts(reasoning)}
+              </ReasoningDetails>
+            </div>
           )}
           {renderParts(others)}
         </div>
       ) : (
-        <div className="w-full">{renderParts(m.parts)}</div>
+        <div className="w-full my-2">{renderParts(m.parts)}</div>
       )}
     </div>
   );
