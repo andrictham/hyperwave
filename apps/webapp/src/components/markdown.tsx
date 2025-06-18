@@ -40,7 +40,7 @@ export function Markdown({ children }: MarkdownProps) {
         type="button"
         onClick={handleCopy}
         className={cn(
-          "absolute top-4 left-2 rounded-md p-1 transition-colors z-10",
+          "absolute top-5 right-3 rounded-md p-1 transition-colors z-10",
           copied
             ? "bg-accent text-accent-foreground"
             : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
