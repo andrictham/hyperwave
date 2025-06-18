@@ -180,6 +180,15 @@ export function Markdown({ children }: MarkdownProps) {
         }
         return <code className={className}>{codeChildren}</code>;
       },
+      table({ node: _node, className, children, ...rest }) {
+        return (
+          <div className="w-full overflow-x-auto my-2">
+            <table {...rest} className={cn("w-full", className)}>
+              {children}
+            </table>
+          </div>
+        );
+      },
     };
   }, [highlighter]);
 
