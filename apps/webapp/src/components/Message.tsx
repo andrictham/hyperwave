@@ -2,7 +2,6 @@ import { useState, type JSX } from "react";
 import { Markdown } from "@/components/markdown";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "@convex-dev/agent/react";
-import { Loader2 } from "lucide-react";
 
 /** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {
@@ -59,100 +58,25 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
   }
 }
 
-/**
- * Render all parts of a message in a stable order.
- *
- * Desired order:
- *   1. Every `reasoning` part
- *   2. Every `tool‑invocation` part
- *   3. Every `text` part
- *
- * We attach a key that combines the part type with its original index
- * in the message’s `parts` array.  That index never changes during
- * streaming, so React keeps each DOM node stable while new parts are
- * appended—fixing the “only first reasoning part shows” bug.
- */
-function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
-  type PartWithIndex = [UIMessage["parts"][number], number];
-
-  const byType = {
-    reasoning: [] as PartWithIndex[],
-    "tool-invocation": [] as PartWithIndex[],
-    text: [] as PartWithIndex[],
-  };
-
-  parts.forEach((part, idx) => {
-    if (part.type === "reasoning") byType.reasoning.push([part, idx]);
-    else if (part.type === "tool-invocation") byType["tool-invocation"].push([part, idx]);
-    else if (part.type === "text") byType.text.push([part, idx]);
-  });
-
-  return (
-    <>
-      {[...byType.reasoning, ...byType["tool-invocation"], ...byType.text].map(
-        ([part, originalIdx]) => (
-          <div
-            key={`${part.type}-${originalIdx}`}
-            className={cn(part.type === "text" ? "mt-2" : "mb-2")}
-          >
-            {renderPart(part)}
-          </div>
-        ),
-      )}
-    </>
-  );
-}
-
-/**
- * Render an assistant message with special handling for reasoning parts.
- *
- * Streaming messages initially contain only reasoning parts. While streaming
- * and before a text part arrives, a spinner with “Reasoning…” is displayed
- * instead of the actual reasoning content. Once text starts streaming the
- * reasoning content is hidden until streaming completes. After completion the
- * reasoning parts can be toggled via a collapsible section.
- */
-function AssistantMessage({ message }: { message: UIMessage }): JSX.Element {
-  const [open, setOpen] = useState(false);
-  const isStreaming = message.status === "streaming";
-  const hasText = message.parts.some((p) => p.type === "text");
-  const reasoning = message.parts.filter((p) => p.type === "reasoning");
-  const others = message.parts.filter((p) => p.type !== "reasoning");
-
-  if (isStreaming && !hasText) {
-    return (
-      <div className="prose">
-        <div className="flex items-center gap-2 text-md text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Reasoning…</span>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full">
-      {renderMessageParts(others)}
-      {!isStreaming && reasoning.length > 0 && (
-        <details
-          className="prose"
-          open={open}
-          onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
-        >
-          <summary className="rounded-lg p-4 text-sm text-accent-foreground/80 bg-accent/100 dark:bg-accent/20 hover:opacity-85 active:opacity-75 transition-all duration-200 ease-in-out select-none cursor-pointer">
-            {open ? "Hide reasoning" : "Show reasoning"}
-          </summary>
-          <div className="mt-1">{renderMessageParts(reasoning)}</div>
-        </details>
-      )}
+/** Render an array of parts in the given order with consistent spacing and stable keys. */
+function renderParts(parts: UIMessage["parts"]): JSX.Element[] {
+  return parts.map((part, idx) => (
+    <div key={`${part.type}-${idx}`} className={cn(part.type === "text" ? "mt-2" : "mb-2")}>
+      {renderPart(part)}
     </div>
-  );
+  ));
 }
 
 /**
  * Render a single message.
  */
 export function Message({ m }: { m: UIMessage }) {
+  // Reasoning toggle
+  const [isOpen, setIsOpen] = useState(true);
+  // const hasText = message.parts.some((p) => p.type === "text");
+  const reasoning = m.parts.filter((p) => p.type === "reasoning");
+  const others = m.parts.filter((p) => p.type !== "reasoning");
+
   return (
     <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
       {m.role === "user" ? (
@@ -162,9 +86,23 @@ export function Message({ m }: { m: UIMessage }) {
           ))}
         </div>
       ) : m.role === "assistant" ? (
-        <AssistantMessage message={m} />
+        <div className="w-full">
+          {reasoning.length > 0 && (
+            <details
+              className="prose"
+              open={isOpen}
+              onToggle={(e) => setIsOpen((e.currentTarget as HTMLDetailsElement).open)}
+            >
+              <summary className="rounded-lg p-4 text-sm text-accent-foreground/80 bg-accent/100 dark:bg-accent/20 hover:opacity-85 active:opacity-75 transition-all duration-200 ease-in-out select-none cursor-pointer">
+                {isOpen ? "Hide reasoning" : "Show reasoning"}
+              </summary>
+              <div className="mt-1">{renderParts(reasoning)}</div>
+            </details>
+          )}
+          {renderParts(others)}
+        </div>
       ) : (
-        <div className="w-full">{renderMessageParts(m.parts)}</div>
+        <div className="w-full">{renderParts(m.parts)}</div>
       )}
     </div>
   );
