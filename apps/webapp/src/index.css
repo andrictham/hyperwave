@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
+@import "react-shiki/css";
 @import "tw-animate-css";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -403,7 +404,7 @@ body {
     @apply font-mono bg-muted rounded px-1 py-0.5;
   }
   .prose pre {
-    @apply bg-transparent text-sm p-0 overflow-x-auto my-2 font-mono leading-relaxed;
+    @apply bg-transparent text-sm p-0 overflow-x-auto my-2 font-mono leading-relaxed w-full;
   }
   .prose pre code {
     @apply bg-transparent p-0 wrap-normal whitespace-pre-wrap w-full;
