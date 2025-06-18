@@ -84,27 +84,13 @@ export function ChatView({
     }
   }, [threadId]);
 
-  // // TODO: Old implementation. To remove.
-  // const messages = threadId
-  //   ? useThreadMessages(
-  //       api.chat.listThreadMessages,
-  //       { threadId },
-  //       {
-  //         initialNumItems: 20,
-  //         stream: true,
-  //       },
-  //     )
-  //   : undefined;
-
   const messages = threadId
     ? useThreadMessages(api.chat.listThreadMessages, threadId ? { threadId } : "skip", {
-        initialNumItems: 20,
+        // TODO: Temporarily fetch more messages since we haven’t implemented pagination
+        initialNumItems: 40,
         stream: true,
       })
     : undefined;
-
-  // TODO: Old implementation. To remove.
-  //  const sendMessage = useAction(api.chatActions.sendMessage);
 
   const sendMessage = useMutation(api.chat.streamMessageAsynchronously).withOptimisticUpdate(
     (store, args) => {
