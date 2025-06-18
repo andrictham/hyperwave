@@ -121,9 +121,9 @@ export function ThreadHeader({ threadId }: { threadId?: string }) {
   return (
     <header className="flex items-center justify-between h-14 border-b px-4 relative">
       <SidebarTrigger className="mr-2" />
-      <div className="flex max-w-lg">
+      <div className="flex w-full justify-center">
         {isEditing ? (
-          <div className="flex items-center gap-2">
+          <div className="flex justify-center items-center gap-1 w-full md:w-[50vw]">
             <Input
               ref={inputRef}
               value={newTitle}
@@ -132,7 +132,7 @@ export function ThreadHeader({ threadId }: { threadId?: string }) {
                 if (e.key === "Enter") handleRename();
                 else if (e.key === "Escape") setIsEditing(false);
               }}
-              className="h-8 w-64"
+              className="h-8 max-w-[70vw] xs:max-w-full"
               autoFocus
             />
             <Button
@@ -159,7 +159,7 @@ export function ThreadHeader({ threadId }: { threadId?: string }) {
         ) : (
           <button
             type="button"
-            className="truncate text-lg font-semibold px-2 py-1 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="w-auto max-w-[70vw] truncate text-xs sm:text-sm md:text-md lg:text-lg font-semibold px-2 py-1 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             onClick={handleStartEditing}
             disabled={!threadId}
           >
