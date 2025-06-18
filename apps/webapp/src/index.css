@@ -433,3 +433,24 @@ body {
     scrollbar-width: none; /* Firefox */
   }
 }
+@keyframes terminal-cursor {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.terminal-cursor {
+  @apply inline-block bg-primary align-baseline;
+  width: 0.6em;
+  height: 1em;
+  margin-left: 0.1em;
+  animation: terminal-cursor 1s steps(1) infinite;
+  box-shadow: 0 0 4px hsl(var(--color-primary));
+}

@@ -296,7 +296,7 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
  * streaming, so React keeps each DOM node stable while new parts are
  * appended—fixing the “only first reasoning part shows” bug.
  */
-function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
+function renderMessageParts(parts: UIMessage["parts"], showCursor?: boolean): React.ReactNode {
   type PartWithIndex = [UIMessage["parts"][number], number];
 
   const byType = {
@@ -311,6 +311,8 @@ function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
     else if (part.type === "text") byType.text.push([part, idx]);
   });
 
+  const lastTextIdx = byType.text.at(-1)?.[1];
+
   return (
     <>
       {[...byType.reasoning, ...byType["tool-invocation"], ...byType.text].map(
@@ -320,6 +322,9 @@ function renderMessageParts(parts: UIMessage["parts"]): React.ReactNode {
             className={cn(part.type === "text" ? "mt-2" : "mb-2")}
           >
             {renderPart(part)}
+            {showCursor && part.type === "text" && originalIdx === lastTextIdx && (
+              <span className="terminal-cursor" />
+            )}
           </div>
         ),
       )}
@@ -357,7 +362,7 @@ function AssistantMessage({ message }: { message: UIMessage }): JSX.Element {
 
   return (
     <div className="w-full">
-      {renderMessageParts(others)}
+      {renderMessageParts(others, isStreaming)}
       {!isStreaming && reasoning.length > 0 && (
         <details
           className="prose"
@@ -367,7 +372,7 @@ function AssistantMessage({ message }: { message: UIMessage }): JSX.Element {
           <summary className="rounded-lg p-4 text-sm text-accent-foreground/80 bg-accent/100 dark:bg-accent/20 hover:opacity-85 active:opacity-75 transition-all duration-200 ease-in-out select-none cursor-pointer">
             {open ? "Hide reasoning" : "Show reasoning"}
           </summary>
-          <div className="mt-1">{renderMessageParts(reasoning)}</div>
+          <div className="mt-1">{renderMessageParts(reasoning, false)}</div>
         </details>
       )}
     </div>
@@ -575,7 +580,9 @@ export function ChatView({
                     ) : m.role === "assistant" ? (
                       <AssistantMessage message={m} />
                     ) : (
-                      <div className="w-full">{renderMessageParts(m.parts)}</div>
+                      <div className="w-full">
+                        {renderMessageParts(m.parts, m.status === "streaming")}
+                      </div>
                     )}
                   </div>
                 ))}
