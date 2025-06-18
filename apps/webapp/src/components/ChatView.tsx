@@ -15,16 +15,13 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import {
-  optimisticallySendMessage,
-  toUIMessages,
-  useThreadMessages,
-  type UIMessage,
-} from "@convex-dev/agent/react";
+import { toUIMessages, useThreadMessages, type UIMessage } from "@convex-dev/agent/react";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
+import { insertAtTop } from "convex/react";
+import type { OptimisticLocalStore } from "convex/browser";
 import { useMutation } from "convex/react";
 import {
   ArrowDownCircle,
@@ -35,8 +32,66 @@ import {
   Pencil,
   Trash2,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { useStickToBottom } from "use-stick-to-bottom";
+
+/**
+ * Insert a new optimistic user message into the local Convex store.
+ */
+function insertUserMessage(
+  store: OptimisticLocalStore,
+  threadId: string,
+  prompt: string,
+  id: string,
+): void {
+  const queries = store.getAllQueries(api.chat.listThreadMessages);
+  let maxOrder = 0;
+  let maxStepOrder = 0;
+  for (const q of queries) {
+    if (q.args?.threadId !== threadId) continue;
+    if (q.args.streamArgs) continue;
+    for (const m of q.value?.page ?? []) {
+      maxOrder = Math.max(maxOrder, m.order);
+      maxStepOrder = Math.max(maxStepOrder, m.stepOrder);
+    }
+  }
+  const order = maxOrder + 1;
+  const stepOrder = 0;
+  insertAtTop({
+    paginatedQuery: api.chat.listThreadMessages,
+    argsToMatch: { threadId, streamArgs: undefined },
+    item: {
+      _creationTime: Date.now(),
+      _id: id,
+      order,
+      stepOrder,
+      status: "pending",
+      threadId,
+      tool: false,
+      message: { role: "user", content: prompt },
+      text: prompt,
+    },
+    localQueryStore: store,
+  });
+}
+
+/**
+ * Remove a message with the given id from the local Convex store.
+ */
+function removeMessageById(
+  store: OptimisticLocalStore,
+  threadId: string,
+  id: string,
+): void {
+  for (const { args, value } of store.getAllQueries(api.chat.listThreadMessages)) {
+    if (args?.threadId !== threadId || args.streamArgs || !value) continue;
+    store.setQuery(api.chat.listThreadMessages, args, {
+      ...value,
+      page: value.page.filter((m) => m._id !== id),
+    });
+  }
+}
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -457,14 +512,18 @@ export function ChatView({
   // TODO: Old implementation. To remove.
   //  const sendMessage = useAction(api.chatActions.sendMessage);
 
+  const pendingIdRef = useRef<string | null>(null);
+  const replaceIdRef = useRef<string | null>(null);
+  const [failedMessageIds, setFailedMessageIds] = useState<string[]>([]);
+
   const sendMessage = useMutation(api.chat.streamMessageAsynchronously).withOptimisticUpdate(
     (store, args) => {
-      if (args.threadId) {
-        optimisticallySendMessage(api.chat.listThreadMessages)(store, {
-          threadId: args.threadId,
-          prompt: args.prompt,
-        });
+      if (!args.threadId) return;
+      const optimisticId = pendingIdRef.current ?? crypto.randomUUID();
+      if (replaceIdRef.current) {
+        removeMessageById(store, args.threadId, replaceIdRef.current);
       }
+      insertUserMessage(store, args.threadId, args.prompt, optimisticId);
     },
   );
 
@@ -512,6 +571,9 @@ export function ChatView({
     if (!text || !modelsLoaded || !model) return;
     if (threadId) {
       setPrompt("");
+      const optimisticId = crypto.randomUUID();
+      pendingIdRef.current = optimisticId;
+      replaceIdRef.current = null;
       try {
         const result = await sendMessage({ threadId, prompt: text, model });
         formRef.current?.reset();
@@ -521,11 +583,15 @@ export function ChatView({
         scrollToBottom();
       } catch (error) {
         console.error("Failed to send message:", error);
+        setFailedMessageIds((ids) => [...ids, optimisticId]);
       }
     } else {
       setIsCreatingThread(true);
       try {
         const newThreadId = await createThread({});
+        const optimisticId = crypto.randomUUID();
+        pendingIdRef.current = optimisticId;
+        replaceIdRef.current = null;
         // Optimistically send the message but don't await it
         void sendMessage({ threadId: newThreadId, prompt: text, model });
         formRef.current?.reset();
@@ -538,6 +604,25 @@ export function ChatView({
       } finally {
         setIsCreatingThread(false);
       }
+    }
+  };
+
+  /**
+   * Retry sending a previously failed message.
+   */
+  const handleRetry = async (message: UIMessage) => {
+    if (!threadId) return;
+    const newId = crypto.randomUUID();
+    pendingIdRef.current = newId;
+    replaceIdRef.current = message.id;
+    try {
+      await sendMessage({ threadId, prompt: message.content, model });
+      setFailedMessageIds((ids) => ids.filter((id) => id !== message.id));
+    } catch (error) {
+      console.error("Failed to resend message:", error);
+      setFailedMessageIds((ids) => [...ids.filter((id) => id !== message.id), newId]);
+    } finally {
+      replaceIdRef.current = null;
     }
   };
 
@@ -571,6 +656,19 @@ export function ChatView({
                         {m.parts.map((part: UIMessage["parts"][number], index: number) => (
                           <div key={index}>{renderPart(part)}</div>
                         ))}
+                        {failedMessageIds.includes(m.id) && (
+                          <div className="mt-1 flex items-center gap-1 text-destructive text-sm">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span>Couldn't send</span>
+                            <button
+                              type="button"
+                              className="underline"
+                              onClick={() => handleRetry(m)}
+                            >
+                              Retry
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ) : m.role === "assistant" ? (
                       <AssistantMessage message={m} />
