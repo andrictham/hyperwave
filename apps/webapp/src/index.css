@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
+@import "react-shiki/css";
 @import "tw-animate-css";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -359,6 +360,9 @@ body {
 }
 
 @layer components {
+  .truncate {
+    max-width: "100%";
+  }
   .prose {
     @apply max-w-prose mx-auto text-base md:text-lg leading-7 px-2 sm:px-4;
   }
@@ -403,13 +407,13 @@ body {
     @apply font-mono bg-muted rounded px-1 py-0.5;
   }
   .prose pre {
-    @apply bg-transparent text-sm p-0 overflow-x-auto my-2 font-mono leading-relaxed;
+    @apply bg-transparent text-sm p-0 overflow-x-auto my-2 font-mono leading-relaxed w-full;
   }
   .prose pre code {
     @apply bg-transparent p-0 wrap-normal whitespace-pre-wrap w-full;
   }
   pre .shiki {
-    @apply p-5 bg-muted rounded-lg wrap-normal whitespace-pre-wrap w-full;
+    @apply px-6 pb-6 pt-12 bg-muted rounded-lg wrap-normal whitespace-pre-wrap w-full;
   }
   .shiki::-webkit-scrollbar {
     display: none;
