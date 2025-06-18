@@ -53,7 +53,7 @@ function RootComponent() {
         <AuthLoading>
           <div className="flex min-h-svh w-full flex-col items-center justify-center space-y-4">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-            <p className="text-foreground/80 text-lg font-medium">Spooling the hyperdrive...</p>
+            <p className="text-foreground/80 text-lg font-medium">Firing up the hyperdrive...</p>
           </div>
         </AuthLoading>
         <Unauthenticated>
