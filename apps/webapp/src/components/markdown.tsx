@@ -80,7 +80,7 @@ export function Markdown({ children }: MarkdownProps) {
       },
       table({ node: _node, className, children, ...rest }) {
         return (
-          <div className="w-full overflow-x-auto my-2">
+          <div className="w-[90vw] sm:w-[100%] overflow-x-auto my-2">
             <table {...rest} className={cn("min-w-max table-auto", className)}>
               {children}
             </table>
