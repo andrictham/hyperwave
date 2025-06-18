@@ -39,7 +39,7 @@ function NoThreads(): React.JSX.Element {
   return (
     <div className="flex flex-col items-center gap-3 p-4 text-center text-sm text-muted-foreground/40">
       <MessagesSquare className="h-8 w-8" />
-      <span>No chats yet. Start a new one below.</span>
+      <span>No chats yet.</span>
     </div>
   );
 }
