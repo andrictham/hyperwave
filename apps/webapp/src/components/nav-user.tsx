@@ -4,10 +4,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
+  // DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
+  // DropdownMenuLabel,
+  // DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -17,7 +17,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from "lucide-react";
+import {
+  // BadgeCheck,
+  // Bell,
+  ChevronsUpDown,
+  // CreditCard,
+  LogOut,
+  //  Sparkles
+} from "lucide-react";
 
 export function NavUser({
   user,
