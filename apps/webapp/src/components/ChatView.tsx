@@ -319,12 +319,14 @@ function renderMessageParts(parts: UIMessage["parts"], showCursor?: boolean): Re
         ([part, originalIdx]) => (
           <div
             key={`${part.type}-${originalIdx}`}
-            className={cn(part.type === "text" ? "mt-2" : "mb-2")}
+            className={cn(part.type === "text" ? "mt-2 flex items-baseline" : "mb-2")}
           >
-            {renderPart(part)}
-            {showCursor && part.type === "text" && originalIdx === lastTextIdx && (
-              <span className="terminal-cursor" />
-            )}
+            <span className={cn(part.type === "text" && "inline-block")}>{renderPart(part)}</span>
+            {showCursor &&
+              part.type === "text" &&
+              originalIdx === lastTextIdx && (
+                <span className="terminal-cursor" />
+              )}
           </div>
         ),
       )}
