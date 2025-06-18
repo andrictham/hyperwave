@@ -232,7 +232,8 @@ export function ChatView({
 
   const messages = threadId
     ? useThreadMessages(api.chat.listThreadMessages, threadId ? { threadId } : "skip", {
-        initialNumItems: 20,
+        // TODO: Temporarily fetch more messages since we haven’t implemented pagination
+        initialNumItems: 40,
         stream: true,
       })
     : undefined;
