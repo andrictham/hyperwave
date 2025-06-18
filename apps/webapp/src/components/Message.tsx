@@ -1,4 +1,5 @@
-import { useState, type JSX } from "react";
+import { type JSX } from "react";
+import { ReasoningDetails } from "./ReasoningDetails";
 import { Markdown } from "@/components/markdown";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "@convex-dev/agent/react";
@@ -71,10 +72,7 @@ function renderParts(parts: UIMessage["parts"]): JSX.Element[] {
  * Render a single message.
  */
 export function Message({ m }: { m: UIMessage }) {
-  // Reasoning toggle
-  const [isOpen, setIsOpen] = useState(true);
   const isStreaming = m.status === "streaming";
-  const hasText = m.parts.some((p) => p.type === "text");
   const reasoning = m.parts.filter((p) => p.type === "reasoning");
   const others = m.parts.filter((p) => p.type !== "reasoning");
 
@@ -89,17 +87,11 @@ export function Message({ m }: { m: UIMessage }) {
       ) : m.role === "assistant" ? (
         <div className="w-full">
           {reasoning.length > 0 && (
-            <details
-              className="prose"
-              open={isOpen}
-              onToggle={(e) => setIsOpen((e.currentTarget as HTMLDetailsElement).open)}
-            >
-              <summary className="rounded-lg p-4 text-sm text-accent-foreground/80 bg-accent/100 dark:bg-accent/20 hover:opacity-85 active:opacity-75 transition-all duration-200 ease-in-out select-none cursor-pointer">
-                {isOpen ? "Hide reasoning" : "Show reasoning"}
-              </summary>
-
-              <div className="mt-1">{renderParts(reasoning)}</div>
-            </details>
+            <div className="mb-2">
+              <ReasoningDetails isStreaming={isStreaming}>
+                <div className="prose">{renderParts(reasoning)}</div>
+              </ReasoningDetails>
+            </div>
           )}
           {renderParts(others)}
         </div>
