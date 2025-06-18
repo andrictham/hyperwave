@@ -6,6 +6,7 @@ import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { getSingletonHighlighter, type Highlighter } from "shiki";
 import nord from "shiki/themes/nord.mjs";
+import ShikiHighlighter from "react-shiki/core";
 
 /** Props for the Markdown component. */
 export interface MarkdownProps {
@@ -131,15 +132,6 @@ export function Markdown({ children }: MarkdownProps) {
     );
   }
 
-  function parseStyle(style: string): React.CSSProperties {
-    return style.split(";").reduce((acc, part) => {
-      const [prop, value] = part.split(":");
-      if (!prop || !value) return acc;
-      const camel = prop.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-      (acc as Record<string, string>)[camel] = value.trim();
-      return acc;
-    }, {} as React.CSSProperties);
-  }
 
   const components = React.useMemo<Components>(() => {
     return {
@@ -150,33 +142,20 @@ export function Markdown({ children }: MarkdownProps) {
           const lang = langMatch[1];
           const loaded = highlighter.getLoadedLanguages();
           const langToUse = loaded.includes(lang) ? lang : "txt";
-          const html = highlighter.codeToHtml(code, {
-            lang: langToUse,
-            theme: "nord",
-          });
-
-          if (typeof window !== "undefined") {
-            const doc = new window.DOMParser().parseFromString(html, "text/html");
-            const pre = doc.querySelector("pre");
-            if (pre) {
-              const cls = pre.className;
-              const styleAttr = pre.getAttribute("style") ?? undefined;
-              const tabIndexAttr = pre.getAttribute("tabindex");
-              const tabIndex = tabIndexAttr ? Number(tabIndexAttr) : undefined;
-              const innerHtml = pre.innerHTML;
-              return (
-                <pre
-                  className={cn(cls, "relative")}
-                  style={styleAttr ? parseStyle(styleAttr) : undefined}
-                  tabIndex={tabIndex}
-                >
-                  <CopyButton code={code} />
-                  <code dangerouslySetInnerHTML={{ __html: innerHtml }} />
-                </pre>
-              );
-            }
-          }
-          return <div dangerouslySetInnerHTML={{ __html: html }} />;
+          return (
+            <div className="relative my-2">
+              <CopyButton code={code} />
+              <ShikiHighlighter
+                highlighter={highlighter}
+                language={langToUse}
+                theme="nord"
+                addDefaultStyles={false}
+                className="w-full overflow-x-auto rounded-lg bg-muted p-5 font-mono leading-relaxed"
+              >
+                {code}
+              </ShikiHighlighter>
+            </div>
+          );
         }
         return <code className={className}>{codeChildren}</code>;
       },

@@ -403,15 +403,18 @@ body {
     @apply font-mono bg-muted rounded px-1 py-0.5;
   }
   .prose pre {
-    @apply bg-transparent text-sm p-0 overflow-x-auto my-2 font-mono leading-relaxed;
+    @apply bg-transparent text-sm p-0 my-2 font-mono leading-relaxed w-full overflow-x-auto;
   }
   .prose pre code {
-    @apply bg-transparent p-0 wrap-normal whitespace-pre-wrap w-full;
+    @apply bg-transparent p-0 whitespace-pre-wrap min-w-full;
   }
-  pre .shiki {
-    @apply p-5 bg-muted rounded-lg wrap-normal whitespace-pre-wrap w-full;
+  .prose pre[data-testid="shiki-container"] {
+    @apply p-5 bg-muted rounded-lg;
   }
-  .shiki::-webkit-scrollbar {
+  .prose pre[data-testid="shiki-container"] code {
+    @apply bg-transparent;
+  }
+  pre[data-testid="shiki-container"]::-webkit-scrollbar {
     display: none;
   }
   .prose table {
