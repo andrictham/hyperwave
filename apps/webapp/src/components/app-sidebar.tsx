@@ -115,7 +115,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem className="flex items-center justify-between">
             <Link
               to="/"
-              className="flex h-12 items-center gap-2 rounded-md px-2 no-underline hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              className="flex h-12 items-center gap-2 rounded-md px-1 no-underline hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
               <img src={logomarkLight} alt="Hyperwave logo" className="h-8 w-8 dark:hidden" />
               <img src={logomarkDark} alt="Hyperwave logo" className="hidden h-8 w-8 dark:block" />
