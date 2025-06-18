@@ -1,8 +1,9 @@
+import type { ThreadDoc } from "@convex-dev/agent";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { ConvexError } from "convex/values";
-import { components } from "./_generated/api";
-import { type QueryCtx, type ActionCtx } from "./_generated/server";
-import type { ThreadDoc } from "@convex-dev/agent";
+
+import { components } from "../convex/_generated/api";
+import { type ActionCtx, type QueryCtx } from "../convex/_generated/server";
 
 /** Convex context that can run queries, either from a query or an action. */
 export type Ctx = QueryCtx | ActionCtx;

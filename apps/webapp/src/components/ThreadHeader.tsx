@@ -20,18 +20,18 @@ import { Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
  */
 export function ThreadHeader({ threadId }: { threadId?: string }) {
   const navigate = useNavigate();
-  const thread = useQuery(api.chat.getThread, threadId ? { threadId } : "skip");
+  const thread = useQuery(api.thread.getThread, threadId ? { threadId } : "skip");
   const updateThread = useMutation(api.thread.updateThread).withOptimisticUpdate(
     (store, { threadId, title }) => {
       if (!title) return;
-      const existing = store.getQuery(api.chat.getThread, { threadId });
+      const existing = store.getQuery(api.thread.getThread, { threadId });
       if (existing) {
-        store.setQuery(api.chat.getThread, { threadId }, { ...existing, title });
+        store.setQuery(api.thread.getThread, { threadId }, { ...existing, title });
       }
-      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+      for (const { args, value } of store.getAllQueries(api.thread.listThreads)) {
         if (!value) continue;
         store.setQuery(
-          api.chat.listThreads,
+          api.thread.listThreads,
           args,
           value.map((t) => (t._id === threadId ? { ...t, title } : t)),
         );
@@ -40,11 +40,11 @@ export function ThreadHeader({ threadId }: { threadId?: string }) {
   );
   const deleteThread = useMutation(api.thread.deleteThread).withOptimisticUpdate(
     (store, { threadId }) => {
-      store.setQuery(api.chat.getThread, { threadId }, undefined);
-      for (const { args, value } of store.getAllQueries(api.chat.listThreads)) {
+      store.setQuery(api.thread.getThread, { threadId }, undefined);
+      for (const { args, value } of store.getAllQueries(api.thread.listThreads)) {
         if (!value) continue;
         store.setQuery(
-          api.chat.listThreads,
+          api.thread.listThreads,
           args,
           value.filter((t) => t._id !== threadId),
         );

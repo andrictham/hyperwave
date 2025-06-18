@@ -1,12 +1,12 @@
-import { vStreamArgs, vThreadDoc } from "@convex-dev/agent";
+import { vStreamArgs } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 
-import { components, internal } from "./_generated/api";
+import { requireOwnThread, requireUserId } from "../utils/threadOwnership";
+import { internal } from "./_generated/api";
 import { internalAction, mutation, query } from "./_generated/server";
 import agent, { openrouter } from "./agent";
 import { allowedModels, defaultModel } from "./models";
-import { requireOwnThread, requireUserId } from "./threadOwnership";
 
 /**
  * Type guard ensuring a value is part of the `allowedModels` whitelist.
@@ -14,20 +14,6 @@ import { requireOwnThread, requireUserId } from "./threadOwnership";
 function isAllowedModel(value: string): value is (typeof allowedModels)[number]["id"] {
   return allowedModels.some((m) => m.id === value);
 }
-
-/**
- * Create a new thread
- */
-export const createThread = mutation({
-  args: {
-    userId: v.optional(v.string()),
-  },
-  handler: async (ctx, { userId }) => {
-    const useUserId = userId || (await requireUserId(ctx));
-    const { threadId } = await agent.createThread(ctx, { userId: useUserId });
-    return threadId;
-  },
-});
 
 /**
  * Saves user's message then asynchronously streams the generated response.
@@ -120,30 +106,5 @@ export const listThreadMessages = query({
       // note: this function will be called with various permutations of delta
       // and message args, so returning derived data .
     };
-  },
-});
-
-export const listThreads = query({
-  args: {},
-  returns: v.array(vThreadDoc),
-  handler: async (ctx) => {
-    const userId = await requireUserId(ctx);
-    const result = await ctx.runQuery(components.agent.threads.listThreadsByUserId, {
-      userId,
-      order: "desc",
-      paginationOpts: { cursor: null, numItems: 50 },
-    });
-    return result.page;
-  },
-});
-
-export const getThread = query({
-  args: {
-    threadId: v.string(),
-  },
-  returns: v.union(vThreadDoc, v.null()),
-  handler: async (ctx, { threadId }) => {
-    const { thread } = await requireOwnThread(ctx, threadId);
-    return thread;
   },
 });

@@ -103,7 +103,7 @@ export function ChatView({
     },
   );
 
-  const createThread = useMutation(api.chat.createThread);
+  const createThread = useMutation(api.thread.createThread);
 
   const [isCreatingThread, setIsCreatingThread] = useState(false);
 

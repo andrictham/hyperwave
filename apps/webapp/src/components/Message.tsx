@@ -73,7 +73,8 @@ function renderParts(parts: UIMessage["parts"]): JSX.Element[] {
 export function Message({ m }: { m: UIMessage }) {
   // Reasoning toggle
   const [isOpen, setIsOpen] = useState(true);
-  // const hasText = message.parts.some((p) => p.type === "text");
+  const isStreaming = m.status === "streaming";
+  const hasText = m.parts.some((p) => p.type === "text");
   const reasoning = m.parts.filter((p) => p.type === "reasoning");
   const others = m.parts.filter((p) => p.type !== "reasoning");
 
@@ -96,6 +97,7 @@ export function Message({ m }: { m: UIMessage }) {
               <summary className="rounded-lg p-4 text-sm text-accent-foreground/80 bg-accent/100 dark:bg-accent/20 hover:opacity-85 active:opacity-75 transition-all duration-200 ease-in-out select-none cursor-pointer">
                 {isOpen ? "Hide reasoning" : "Show reasoning"}
               </summary>
+
               <div className="mt-1">{renderParts(reasoning)}</div>
             </details>
           )}

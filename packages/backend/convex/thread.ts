@@ -1,10 +1,49 @@
-import type { ThreadDoc } from "@convex-dev/agent";
+import { vThreadDoc, type ThreadDoc } from "@convex-dev/agent";
 import { v } from "convex/values";
 
-import { components } from "./_generated/api";
-import { internalAction, mutation } from "./_generated/server";
+import { components } from "../convex/_generated/api";
+import { internalAction, mutation, query } from "../convex/_generated/server";
+import { requireOwnThread, requireUserId } from "../utils/threadOwnership";
 import agent from "./agent";
-import { requireOwnThread } from "./threadOwnership";
+
+export const listThreads = query({
+  args: {},
+  returns: v.array(vThreadDoc),
+  handler: async (ctx) => {
+    const userId = await requireUserId(ctx);
+    const result = await ctx.runQuery(components.agent.threads.listThreadsByUserId, {
+      userId,
+      order: "desc",
+      paginationOpts: { cursor: null, numItems: 50 },
+    });
+    return result.page;
+  },
+});
+
+export const getThread = query({
+  args: {
+    threadId: v.string(),
+  },
+  returns: v.union(vThreadDoc, v.null()),
+  handler: async (ctx, { threadId }) => {
+    const { thread } = await requireOwnThread(ctx, threadId);
+    return thread;
+  },
+});
+
+/**
+ * Create a new thread
+ */
+export const createThread = mutation({
+  args: {
+    userId: v.optional(v.string()),
+  },
+  handler: async (ctx, { userId }) => {
+    const useUserId = userId || (await requireUserId(ctx));
+    const { threadId } = await agent.createThread(ctx, { userId: useUserId });
+    return threadId;
+  },
+});
 
 /**
  * Remove a thread and all of its messages. Only the owning user is allowed to
