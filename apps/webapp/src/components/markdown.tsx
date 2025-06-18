@@ -114,7 +114,7 @@ export function Markdown({ children }: MarkdownProps) {
         type="button"
         onClick={handleCopy}
         className={cn(
-          "absolute top-2 right-2 rounded-xs p-1 transition-colors",
+          "absolute top-2 left-2 rounded-xs p-1 transition-colors z-10",
           copied
             ? "bg-accent text-accent-foreground"
             : "bg-secondary text-secondary-foreground hover:bg-secondary/80",
@@ -142,7 +142,7 @@ export function Markdown({ children }: MarkdownProps) {
                 theme={nord}
                 addDefaultStyles={false}
                 as="pre"
-                className="w-full overflow-x-auto"
+                className="w-full break-words whitespace-pre-wrap overflow-x-auto"
               >
                 {code}
               </ShikiHighlighter>
