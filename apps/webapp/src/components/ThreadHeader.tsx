@@ -159,14 +159,14 @@ export function ThreadHeader({ threadId }: { threadId?: string }) {
         ) : (
           <button
             type="button"
-            className="w-auto max-w-[70vw] truncate text-xs sm:text-sm md:text-md lg:text-lg font-semibold px-2 py-1 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="w-auto max-w-[70vw] truncate text-md sm:text-md md:text-md lg:text-lg font-semibold px-2 py-1 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             onClick={handleStartEditing}
             disabled={!threadId}
           >
             {!threadId ? (
               "New chat"
             ) : thread ? (
-              thread.title || "New chat"
+              thread.title || "Untitled"
             ) : (
               <Skeleton className="h-6 w-32" />
             )}
