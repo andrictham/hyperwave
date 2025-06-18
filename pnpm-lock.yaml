@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@convex-dev/agent': ^0.1.8
+  '@convex-dev/agent': ^0.1.9-alpha.6
 
 importers:
 
@@ -61,8 +61,8 @@ importers:
   apps/webapp:
     dependencies:
       '@convex-dev/agent':
-        specifier: ^0.1.8
-        version: 0.1.8(ai@4.3.16(react@19.1.0)(zod@3.25.64))(convex-helpers@0.1.94(@standard-schema/spec@1.0.0)(convex@1.24.8(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(zod@3.25.64))(convex@1.24.8(react@19.1.0))(react@19.1.0)
+        specifier: ^0.1.9-alpha.6
+        version: 0.1.9-alpha.10(ai@4.3.16(react@19.1.0)(zod@3.25.64))(convex-helpers@0.1.94(@standard-schema/spec@1.0.0)(convex@1.24.8(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(zod@3.25.64))(convex@1.24.8(react@19.1.0))(react@19.1.0)
       '@convex-dev/auth':
         specifier: ^0.0.87
         version: 0.0.87(@auth/core@0.37.0)(convex@1.24.8(react@19.1.0))(react@19.1.0)
@@ -200,8 +200,8 @@ importers:
         specifier: 0.37.0
         version: 0.37.0
       '@convex-dev/agent':
-        specifier: ^0.1.8
-        version: 0.1.8(ai@4.3.16(react@19.1.0)(zod@3.25.64))(convex-helpers@0.1.94(@standard-schema/spec@1.0.0)(convex@1.24.8(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(zod@3.25.64))(convex@1.24.8(react@19.1.0))(react@19.1.0)
+        specifier: ^0.1.9-alpha.6
+        version: 0.1.9-alpha.10(ai@4.3.16(react@19.1.0)(zod@3.25.64))(convex-helpers@0.1.94(@standard-schema/spec@1.0.0)(convex@1.24.8(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(zod@3.25.64))(convex@1.24.8(react@19.1.0))(react@19.1.0)
       '@convex-dev/auth':
         specifier: ^0.0.87
         version: 0.0.87(@auth/core@0.37.0)(convex@1.24.8(react@19.1.0))(react@19.1.0)
@@ -412,8 +412,8 @@ packages:
     resolution: {integrity: sha512-ETyHEk2VHHvl9b9jZP5IHPavHYk57EhanlRRuae9XCpb/j5bDCbPPMOBfCWhnl/7EDJz0jEMCi/RhccCE8r1+Q==}
     engines: {node: '>=6.9.0'}
 
-  '@convex-dev/agent@0.1.8':
-    resolution: {integrity: sha512-5X2sIZ7tUA7efL0cy5kO7jsE7uhN7VqB00vwjjjvdZBZv4PSNFdS/Kzek0R5pONsrc7/n0O/8p56oEg8SbJrTg==}
+  '@convex-dev/agent@0.1.9-alpha.10':
+    resolution: {integrity: sha512-BClYFE3WIdzrOWNTS0/ZS63VgANBHWRWkC3cLbhXNNr5mHGypenBOSx4d2ALjFgl86xyp7CwXysNE4FCK762ZQ==}
     peerDependencies:
       ai: ^4.3.16
       convex: ^1.23.0
@@ -4863,7 +4863,7 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
-  '@convex-dev/agent@0.1.8(ai@4.3.16(react@19.1.0)(zod@3.25.64))(convex-helpers@0.1.94(@standard-schema/spec@1.0.0)(convex@1.24.8(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(zod@3.25.64))(convex@1.24.8(react@19.1.0))(react@19.1.0)':
+  '@convex-dev/agent@0.1.9-alpha.10(ai@4.3.16(react@19.1.0)(zod@3.25.64))(convex-helpers@0.1.94(@standard-schema/spec@1.0.0)(convex@1.24.8(react@19.1.0))(react@19.1.0)(typescript@5.8.3)(zod@3.25.64))(convex@1.24.8(react@19.1.0))(react@19.1.0)':
     dependencies:
       ai: 4.3.16(react@19.1.0)(zod@3.25.64)
       convex: 1.24.8(react@19.1.0)

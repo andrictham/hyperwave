@@ -120,7 +120,6 @@ function AssistantMessage({ message }: { message: UIMessage }): JSX.Element {
   const others = message.parts.filter((p) => p.type !== "reasoning");
 
   if (isStreaming && !hasText) {
-    // if (true) {
     return (
       <div className="prose">
         <div className="flex items-center gap-2 text-md text-muted-foreground">

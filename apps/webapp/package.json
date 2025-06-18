@@ -22,7 +22,7 @@
     "vite": "^6.3.5"
   },
   "dependencies": {
-    "@convex-dev/agent": "^0.1.8",
+    "@convex-dev/agent": "^0.1.9-alpha.6",
     "@convex-dev/auth": "^0.0.87",
     "@hookform/resolvers": "^3.10.0",
     "@hyperwave/backend": "workspace:*",
