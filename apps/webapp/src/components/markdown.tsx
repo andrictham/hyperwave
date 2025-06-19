@@ -69,6 +69,7 @@ export function Markdown({ children }: MarkdownProps) {
                 addDefaultStyles={false}
                 as="pre"
                 className="w-full whitespace-pre-wrap overflow-x-auto break-all sm:break-normal"
+                showLineNumbers
               >
                 {code}
               </ShikiHighlighter>
