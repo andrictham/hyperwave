@@ -325,7 +325,7 @@ export function ChatView({
                   }}
                 >
                   <PopoverTrigger asChild>
-                    <Button type="button" variant="secondary" size="sm" disabled={!modelsLoaded}>
+                    <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
                       {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
                     </Button>
                   </PopoverTrigger>

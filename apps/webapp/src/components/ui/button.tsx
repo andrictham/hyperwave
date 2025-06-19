@@ -20,7 +20,7 @@ const buttonVariants = cva(
           "bg-primary text-primary-foreground shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.20)_inset,0px_8px_19.1px_0px_rgba(197,66,10,0.30)] hover:bg-primary/90",
         toggleButtonDisabled:
           "border bg-background shadow-xs hover:bg-secondary hover:text-secondary-foreground dark:bg-secondary/30 dark:border-secondary dark:hover:bg-secondary/50",
-        toggleButtonEnabled: "border bg-accent text-accent-foreground hover:bg-accent/90",
+        toggleButtonEnabled: "border bg-primary text-primary-foreground hover:bg-primary/90",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
