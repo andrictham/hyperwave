@@ -30,13 +30,16 @@ import { ThreadHeader } from "./ThreadHeader";
  * Convert raw error messages from the backend into human friendly strings.
  */
 function toFriendlyError(error: string): string {
-  if (error.includes("AI_TypeValidationError") || error.includes("Type validation failed")) {
+  if (
+    error.includes("AI_TypeValidationError") ||
+    error.includes("Type validation failed")
+  ) {
     return "The AI service returned an invalid response.";
   }
   if (error === "Internal Server Error") {
     return "The AI service encountered an internal error.";
   }
-  return error;
+  return "An unexpected error occurred.";
 }
 
 /** A UI message with optional error information. */
@@ -107,8 +110,8 @@ export function ChatView({
     }
   }, [modelsConfig, model]);
 
-  const filteredModels = useMemo(() => {
-    if (!modelsConfig) return [] as ModelInfo[];
+  const filteredModels = useMemo<ModelInfo[]>(() => {
+    if (!modelsConfig) return [];
     const query = modelFilter.toLowerCase();
     const base: ModelInfo[] = modelsConfig.models.filter(
       (m) => m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query),
@@ -175,7 +178,7 @@ export function ChatView({
     : [];
   const hasMessages = messageList.length > 0;
 
-  const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
+  const isStreaming = messageList.some((m) => m.status === "streaming");
 
   const { scrollRef, contentRef, scrollToBottom, isAtBottom } = useStickToBottom({
     resize: "smooth",
