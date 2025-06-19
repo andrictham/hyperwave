@@ -6,13 +6,28 @@ import { cn } from "@/lib/utils";
 import { ChevronRight, Lightbulb, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 
-interface ReasoningDetailsProps {
+interface ReasoningAndToolDetailsProps {
+  /**
+   * Whether the assistant is still streaming the content for this section.
+   * When true, the component will keep scrolling to the bottom to reveal new
+   * content.
+   */
   isStreaming: boolean;
+  /**
+   * Specify whether this section displays model reasoning or tool invocation
+   * information. The heading text changes based on this type.
+   */
+  type: "reasoning" | "tool";
   children: React.ReactNode;
   className?: string;
 }
 
-export function ReasoningDetails({ isStreaming, children, className }: ReasoningDetailsProps) {
+export function ReasoningAndToolDetails({
+  isStreaming,
+  type,
+  children,
+  className,
+}: ReasoningAndToolDetailsProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [scrollState, setScrollState] = React.useState({
     isAtTop: true,
@@ -105,7 +120,13 @@ export function ReasoningDetails({ isStreaming, children, className }: Reasoning
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-card-foreground">
-                {isStreaming ? "Thinking" : "Reasoning details"}
+                {type === "reasoning"
+                  ? isStreaming
+                    ? "Thinking"
+                    : "Reasoning details"
+                  : isStreaming
+                    ? "Running tools"
+                    : "Tool call details"}
               </span>
               {!isStreaming && (
                 <span className="text-xs text-muted-foreground">
