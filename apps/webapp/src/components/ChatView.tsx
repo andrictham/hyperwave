@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import type { MessageDoc } from "@convex-dev/agent/client";
+import type { MessageDoc } from "@convex-dev/agent";
 import {
   optimisticallySendMessage,
   toUIMessages,
@@ -30,10 +30,7 @@ import { ThreadHeader } from "./ThreadHeader";
  * Convert raw error messages from the backend into human friendly strings.
  */
 function toFriendlyError(error: string): string {
-  if (
-    error.includes("AI_TypeValidationError") ||
-    error.includes("Type validation failed")
-  ) {
+  if (error.includes("AI_TypeValidationError") || error.includes("Type validation failed")) {
     return "The AI service returned an invalid response.";
   }
   if (error === "Internal Server Error") {
