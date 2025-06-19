@@ -415,13 +415,13 @@ body {
     @apply rounded-md my-4;
   }
   .prose a {
-    @apply underline underline-offset-2 decoration-primary text-primary transition-colors;
+    @apply underline underline-offset-5 decoration-accent text-neptune-7 dark:text-neptune-6 transition-colors;
   }
   .prose a:hover {
-    color: var(--color-sol-8);
+    color: var(--color-neptune-9);
   }
   .dark .prose a:hover {
-    color: var(--primary-foreground);
+    color: var(--color-neptune-8);
   }
   .prose blockquote {
     @apply border-l-2 pl-4 italic text-muted-foreground my-4;
