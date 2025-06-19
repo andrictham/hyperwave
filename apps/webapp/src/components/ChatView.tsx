@@ -6,7 +6,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useLocalStorageString } from "@/hooks/use-local-storage";
+import {
+  useLocalStorageBoolean,
+  useLocalStorageString,
+} from "@/hooks/use-local-storage";
 import { cn } from "@/lib/utils";
 import type { MessageDoc } from "@convex-dev/agent";
 import {
@@ -90,7 +93,8 @@ export function ChatView({
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [modelFilter, setModelFilter] = useState("");
   const [activeModelIndex, setActiveModelIndex] = useState(0);
-  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] =
+    useLocalStorageBoolean("hyperwave-web-search", false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
