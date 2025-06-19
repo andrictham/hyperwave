@@ -17,8 +17,8 @@ import {
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useQuery } from "convex-helpers/react/cache";
-import { useMutation } from "convex/react";
-import { ArrowDown, ArrowUp, Check, Loader2 } from "lucide-react";
+import { useAction, useMutation } from "convex/react";
+import { ArrowDown, ArrowUp, Check, Loader2, Paperclip, X } from "lucide-react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
 import { Message } from "./Message";
@@ -45,6 +45,8 @@ export function ChatView({
   const [activeModelIndex, setActiveModelIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   useEffect(() => {
     if (modelsConfig && !model) {
@@ -104,6 +106,9 @@ export function ChatView({
     },
   );
 
+  const uploadFile = useAction(api.files.uploadFile);
+  const sendFileMessage = useMutation(api.files.streamFileMessageAsynchronously);
+
   const createThread = useMutation(api.thread.createThread);
 
   const [isCreatingThread, setIsCreatingThread] = useState(false);
@@ -147,11 +152,25 @@ export function ChatView({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = prompt.trim();
-    if (!text || !modelsLoaded || !model) return;
+    if (!text && !file) return;
+    if (!modelsLoaded || !model) return;
     if (threadId) {
       setPrompt("");
       try {
-        const result = await sendMessage({ threadId, prompt: text, model });
+        let fileId: string | undefined;
+        if (file) {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          const uploaded = await uploadFile({
+            file: bytes,
+            mimeType: file.type || "application/octet-stream",
+            filename: file.name,
+          });
+          fileId = uploaded.fileId;
+          setFile(null);
+        }
+        const result = fileId
+          ? await sendFileMessage({ threadId, fileId, prompt: text, model })
+          : await sendMessage({ threadId, prompt: text, model });
         formRef.current?.reset();
         if (!threadId && onNewThread && result?.threadId) {
           onNewThread(result.threadId);
@@ -164,8 +183,20 @@ export function ChatView({
       setIsCreatingThread(true);
       try {
         const newThreadId = await createThread({});
-        // Optimistically send the message but don't await it
-        void sendMessage({ threadId: newThreadId, prompt: text, model });
+        let fileId: string | undefined;
+        if (file) {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          const uploaded = await uploadFile({
+            file: bytes,
+            mimeType: file.type || "application/octet-stream",
+            filename: file.name,
+          });
+          fileId = uploaded.fileId;
+          setFile(null);
+        }
+        void (fileId
+          ? sendFileMessage({ threadId: newThreadId, fileId, prompt: text, model })
+          : sendMessage({ threadId: newThreadId, prompt: text, model }));
         formRef.current?.reset();
         setPrompt("");
         if (onNewThread) {
@@ -245,7 +276,34 @@ export function ChatView({
                   isCreatingThread && "opacity-50",
                 )}
               />
-              <div className="flex items-end justify-between">
+              <div className="flex items-end justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isCreatingThread || isStreaming}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    <span className="sr-only">Attach file</span>
+                  </Button>
+                  {file && (
+                    <div className="flex items-center gap-1 text-xs max-w-[150px]">
+                      <span className="truncate">{file.name}</span>
+                      <button type="button" onClick={() => setFile(null)}>
+                        <X className="w-3 h-3" />
+                        <span className="sr-only">Remove file</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <Popover
                   open={modelMenuOpen}
                   onOpenChange={(open) => {
@@ -321,7 +379,7 @@ export function ChatView({
                   size="icon"
                   variant="brand"
                   className="rounded-full"
-                  disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
+                  disabled={!modelsLoaded || (!prompt.trim() && !file) || isStreaming || isCreatingThread}
                 >
                   {isCreatingThread ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
