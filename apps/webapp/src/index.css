@@ -220,7 +220,7 @@ body {
   --muted: var(--color-stone-1);
   --muted-foreground: var(--color-stone-9);
 
-  --accent: var(--color-neptune-1);
+  --accent: var(--color-neptune-0);
   --accent-foreground: var(--color-neptune-10);
 
   --destructive: var(--color-red-6);
