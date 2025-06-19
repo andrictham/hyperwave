@@ -26,7 +26,8 @@ An open-source AI chat app built with Convex and TanStack Router.
 ### Known Issues
 
 - [ ] Layout isn’t fully responsive (horizontal overflow on some breakpoints due to Markdown tables) - https://github.com/andrictham/hyperwave/issues/82
-- [ ] No ability to stop generating in the middle of a stream https://github.com/andrictham/hyperwave/issues/83
+- [ ] No ability to stop generating in the middle of a stream - https://github.com/andrictham/hyperwave/issues/83
+- [ ] Currently only the last 40 messages are fetched in a thread - https://github.com/andrictham/hyperwave/issues/85
 
 ## Stack
 
