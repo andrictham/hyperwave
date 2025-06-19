@@ -11,6 +11,12 @@ import { query } from "./_generated/server";
  */
 export const allowedModels = [
   {
+    id: "mistralai/mistral-small-3.1-24b-instruct:free",
+    name: "Mistral Small 3.1 24B",
+    gateway: "openrouter",
+    supportsImages: true,
+  },
+  {
     id: "qwen/qwen3-32b-04-28:free",
     name: "Qwen3 32B",
     gateway: "openrouter",
@@ -71,7 +77,14 @@ export const listModels = query({
   args: {} as Record<never, never>,
   returns: v.object({
     defaultModel: v.string(),
-    models: v.array(v.object({ id: v.string(), name: v.string(), gateway: v.string() })),
+    models: v.array(
+      v.object({
+        id: v.string(),
+        name: v.string(),
+        gateway: v.string(),
+        supportsImages: v.optional(v.boolean()),
+      }),
+    ),
   }),
   handler: async () => ({
     defaultModel,
