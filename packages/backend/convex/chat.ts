@@ -80,16 +80,29 @@ export const streamMessage = internalAction({
   handler: async (ctx, { promptMessageId, threadId, model, useWebSearch }) => {
     const { thread } = await agent.continueThread(ctx, { threadId });
     const modelId = model && isAllowedModel(model) ? model : defaultModel;
-    const result = await thread.streamText(
-      {
-        promptMessageId,
-        model: openrouter.chat(modelId),
-        tools: useWebSearch ? { webSearch: webSearchTool } : undefined,
-        maxSteps: 5,
-      },
-      { saveStreamDeltas: true },
-    );
-    await result.consumeStream();
+    try {
+      const result = await thread.streamText(
+        {
+          promptMessageId,
+          model: openrouter.chat(modelId),
+          tools: useWebSearch ? { webSearch: webSearchTool } : undefined,
+          maxSteps: 5,
+        },
+        { saveStreamDeltas: true },
+      );
+      await result.consumeStream();
+    } catch (unknownError) {
+      const error =
+        unknownError instanceof Error
+          ? unknownError
+          : new Error(String(unknownError));
+      if (error.name === "AI_TypeValidationError") {
+        console.error("LLM returned invalid response", error);
+        throw new ConvexError("The AI service returned an invalid response.");
+      }
+      console.error("Error streaming message", error);
+      throw new ConvexError(error.message);
+    }
   },
 });
 

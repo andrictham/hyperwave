@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import type { MessageDoc } from "@convex-dev/agent";
 import {
   optimisticallySendMessage,
   toUIMessages,
@@ -24,6 +25,51 @@ import { useStickToBottom } from "use-stick-to-bottom";
 
 import { Message } from "./Message";
 import { ThreadHeader } from "./ThreadHeader";
+
+/**
+ * Convert raw error messages from the backend into human friendly strings.
+ */
+function toFriendlyError(error: string): string {
+  if (error.includes("AI_TypeValidationError") || error.includes("Type validation failed")) {
+    return "The AI service returned an invalid response.";
+  }
+  if (error === "Internal Server Error") {
+    return "The AI service encountered an internal error.";
+  }
+  return "An unexpected error occurred.";
+}
+
+/** A UI message with optional error information. */
+export interface UIMessageWithError extends UIMessage {
+  /** Optional error string if the message failed. */
+  error?: string;
+}
+
+/**
+ * Convert MessageDoc objects to UI messages while preserving their error field.
+ */
+function toUIMessagesWithError(
+  messages: (MessageDoc & { streaming?: boolean })[],
+): UIMessageWithError[] {
+  const ui = toUIMessages(messages);
+  const errorMap = new Map<string, string>();
+  for (const m of messages) {
+    if (m.error) {
+      errorMap.set(`${m.threadId}-${m.order}-${m.stepOrder}`, toFriendlyError(m.error));
+    }
+  }
+  return ui.map((m) => ({ ...m, error: errorMap.get(m.key) }));
+}
+
+/**
+ * Extract a single string prompt from the text parts of a UI message.
+ */
+function extractPrompt(m: UIMessage): string {
+  return m.parts
+    .filter((p): p is { type: "text"; text: string } => p.type === "text")
+    .map((p) => (typeof p.text === "string" ? p.text : ""))
+    .join("");
+}
 
 /**
  * Primary chat view showing the list of messages for a thread and a form to
@@ -61,8 +107,8 @@ export function ChatView({
     }
   }, [modelsConfig, model]);
 
-  const filteredModels = useMemo(() => {
-    if (!modelsConfig) return [] as ModelInfo[];
+  const filteredModels = useMemo<ModelInfo[]>(() => {
+    if (!modelsConfig) return [];
     const query = modelFilter.toLowerCase();
     const base: ModelInfo[] = modelsConfig.models.filter(
       (m) => m.name.toLowerCase().includes(query) || m.id.toLowerCase().includes(query),
@@ -124,10 +170,13 @@ export function ChatView({
 
   const [isCreatingThread, setIsCreatingThread] = useState(false);
 
-  const messageList: UIMessage[] = messages ? toUIMessages(messages.results ?? []) : [];
+  const messageList: UIMessageWithError[] = messages
+    ? toUIMessagesWithError(messages.results ?? [])
+    : [];
   const hasMessages = messageList.length > 0;
 
-  const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;
+  // TODO: Use isStreaming status to show loading state to the user above the chat input, and to let them stop generating as well.
+  // const isStreaming = messageList.some((m) => m.status === "streaming");
 
   const { scrollRef, contentRef, scrollToBottom, isAtBottom } = useStickToBottom({
     resize: "smooth",
@@ -151,6 +200,38 @@ export function ChatView({
   }, []);
 
   const isMobile = useIsMobile();
+
+  /**
+   * Retry sending a message when generation failed.
+   */
+  const retryFailedMessage = async (index: number) => {
+    const failed = messageList[index];
+    if (!failed || !threadId) return;
+    let promptToSend: string | undefined;
+    if (failed.role === "user") {
+      promptToSend = extractPrompt(failed);
+    } else {
+      const prevUser = [...messageList]
+        .slice(0, index)
+        .reverse()
+        .find((m) => m.role === "user");
+      if (prevUser) {
+        promptToSend = extractPrompt(prevUser);
+      }
+    }
+    if (!promptToSend || !model) return;
+    try {
+      await sendMessage({
+        threadId,
+        prompt: promptToSend,
+        model,
+        useWebSearch: webSearchEnabled,
+      });
+      scrollToBottom();
+    } catch (error) {
+      console.error("Retry failed", error);
+    }
+  };
 
   /**
    * Submit handler for the message form. If a thread already exists it will
@@ -242,7 +323,14 @@ export function ChatView({
                 hasMessages ? "space-y-10" : "flex flex-col items-center justify-center",
               )}
             >
-              {hasMessages && messageList.map((m) => <Message key={m.key} m={m} />)}
+              {hasMessages &&
+                messageList.map((m, idx) => (
+                  <Message
+                    key={m.key}
+                    m={m}
+                    onRetry={m.error ? () => retryFailedMessage(idx) : undefined}
+                  />
+                ))}
               {!threadId && (
                 <>
                   <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />
@@ -282,7 +370,7 @@ export function ChatView({
                 }}
                 minRows={isMobile ? 2 : 3}
                 maxRows={6}
-                disabled={isCreatingThread || isStreaming}
+                disabled={isCreatingThread}
                 placeholder="Type a message..."
                 className={cn(
                   "border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0",
@@ -310,7 +398,7 @@ export function ChatView({
                   size="icon"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isStreaming || isCreatingThread}
+                  disabled={isCreatingThread}
                 >
                   <Paperclip className="h-4 w-4" />
                   <span className="sr-only">Attach file</span>
@@ -426,7 +514,7 @@ export function ChatView({
                   size="icon"
                   variant="brand"
                   className="rounded-full ml-auto"
-                  disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
+                  disabled={!modelsLoaded || !prompt.trim() || isCreatingThread}
                 >
                   {isCreatingThread ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
