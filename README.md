@@ -12,12 +12,13 @@ An open-source AI chat app built with Convex and TanStack Router.
 - Resumable Streams via Convex Agent: Continue generation after page refresh
 - Syntax highlighting of LLM responses via Shiki
 - Web search via Jina
+- Upload images to chat with them
 - Responsive layout: chat on mobile, tablet, and desktop
 
-### Planned
+### Planned Features
 
-- [ ] File and image attachment support (WIP)
-- [ ] Bring your own key via OpenRouter
+- [ ] Bring your own key via OpenRouter and A4F
+- [ ] Image generation via Replicate and A4F
 - [ ] Share chats via a public link
 - [ ] Chat branching (when the Convex Agent component supports it)
 - [ ] Edit message and message versioning (when the Convex Agent component supports it)
