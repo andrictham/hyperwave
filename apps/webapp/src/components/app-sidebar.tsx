@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
+import { useParams } from "@tanstack/react-router";
 import logomarkDark from "@/assets/hyperwave-logomark-dark.png";
 import logomarkLight from "@/assets/hyperwave-logomark-light.png";
 import { NavUser } from "@/components/nav-user";
@@ -44,6 +45,7 @@ function NoThreads(): React.JSX.Element {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const params = useParams({ from: "/_chatLayout/chat/$threadId" });
   const healthCheck = useQuery(api.healthCheck?.get);
   const threads = useQuery(api.thread.listThreads) ?? [];
   const user = useQuery(api.auth.me);
@@ -152,10 +154,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuButton
                       asChild
                       size="default"
+                      isActive={params.threadId === t._id}
                       className={`${editingThreadId === t._id ? "hidden" : ""}`}
                     >
                       <Link to="/chat/$threadId" params={{ threadId: t._id }} className="truncate">
-                        {t.title ?? "Untitled"}
+                        <span>{t.title ?? "Untitled"}</span>
                       </Link>
                     </SidebarMenuButton>
                     {editingThreadId === t._id ? (
@@ -202,44 +205,39 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         </div>
                       </div>
                     ) : (
-                      <div className="pl-1">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <SidebarMenuAction
-                              showOnHover={!isMobile}
-                              className="bg-sidebar-accent"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">More actions</span>
-                            </SidebarMenuAction>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            className="w-48"
-                            side={isMobile ? "bottom" : "right"}
-                            align={isMobile ? "end" : "start"}
-                            onClick={(e) => e.stopPropagation()} // Prevent link navigation from content clicks
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuAction showOnHover={!isMobile} className="bg-sidebar-accent">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">More actions</span>
+                          </SidebarMenuAction>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          className="w-48"
+                          side={isMobile ? "bottom" : "right"}
+                          align={isMobile ? "end" : "start"}
+                          onClick={(e) => e.stopPropagation()} // Prevent link navigation from content clicks
+                        >
+                          <DropdownMenuItem
+                            onSelect={() => {
+                              handleRenameStart(t._id, t.title ?? "");
+                            }}
                           >
-                            <DropdownMenuItem
-                              onSelect={() => {
-                                handleRenameStart(t._id, t.title ?? "");
-                              }}
-                            >
-                              <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
-                              <span>Rename</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onSelect={() => {
-                                deleteThread({ threadId: t._id });
-                              }}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />{" "}
-                              {/* Icon color handled by variant destructive */}
-                              <span>Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                            <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <span>Rename</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => {
+                              deleteThread({ threadId: t._id });
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />{" "}
+                            {/* Icon color handled by variant destructive */}
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </SidebarMenuItem>
                 ))
