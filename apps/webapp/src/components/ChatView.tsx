@@ -304,6 +304,7 @@ export function ChatView({
                 className="hidden"
               />
               <div className="flex items-end gap-2">
+                {/* Attach file */}
                 <Button
                   type="button"
                   size="icon"
@@ -314,6 +315,7 @@ export function ChatView({
                   <Paperclip className="h-4 w-4" />
                   <span className="sr-only">Attach file</span>
                 </Button>
+                {/* Model selection */}
                 <Popover
                   open={modelMenuOpen}
                   onOpenChange={(open) => {
@@ -325,7 +327,7 @@ export function ChatView({
                   }}
                 >
                   <PopoverTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
+                    <Button type="button" variant="outline" size="default" disabled={!modelsLoaded}>
                       {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
                     </Button>
                   </PopoverTrigger>
@@ -396,13 +398,14 @@ export function ChatView({
                     </div>
                   </PopoverContent>
                 </Popover>
-                <div className="flex items-end gap-2 ml-2">
+                {/* Web search toggle */}
+                <div className="flex items-center gap-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         type="button"
                         variant={webSearchEnabled ? "toggleButtonEnabled" : "toggleButtonDisabled"}
-                        size="sm"
+                        size="default"
                         disabled={!selectedModelInfo?.supportsTools}
                         onClick={() => setWebSearchEnabled((v) => !v)}
                       >
@@ -417,6 +420,7 @@ export function ChatView({
                     )}
                   </Tooltip>
                 </div>
+                {/* Send button */}
                 <Button
                   type="submit"
                   size="icon"
