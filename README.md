@@ -1,6 +1,7 @@
-# Hyperwave
+![image](https://github.com/user-attachments/assets/a30e8af8-8ab0-492e-af7d-c0cfaf29aa31)
 
-## An open-source AI chat app built with Convex and TanStack Router.
+# Hyperwave
+An open-source AI chat app built with Convex and TanStack Router.
 
 ## Features
 
@@ -10,21 +11,21 @@
 - Live chat history synchronization via Convex DB
 - Resumable Streams via Convex Agent: Continue generation after page refresh
 - Syntax highlighting of LLM responses via Shiki
+- Web search via Jina
+- Responsive layout: chat on mobile, tablet, and desktop
 
 ### Planned
 
+- [ ] File and image attachment support (WIP)
 - [ ] Bring your own key via OpenRouter
-- [x] Web search via Jina
-- [ ] File and image attachment support
-- [ ] Chat branching (when the Convex Agent component supports it)
-- [ ] Edit message and message versioning
 - [ ] Share chats via a public link
+- [ ] Chat branching (when the Convex Agent component supports it)
+- [ ] Edit message and message versioning (when the Convex Agent component supports it)
 
 ### Known Issues
 
-- [ ] Layout isn’t fully responsive (horizontal overflow on some breakpoints due to Markdown tables)
-- [ ] Errors when receiving AI responses aren't properly handled in the UI
-- [ ] No ability to stop generating in the middle of a stream ([get-convex/agent#61](https://github.com/get-convex/agent/issues/61))
+- [ ] Layout isn’t fully responsive (horizontal overflow on some breakpoints due to Markdown tables) - https://github.com/andrictham/hyperwave/issues/82
+- [ ] No ability to stop generating in the middle of a stream https://github.com/andrictham/hyperwave/issues/83
 
 ## Stack
 
