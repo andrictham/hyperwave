@@ -30,14 +30,14 @@ An open-source AI chat app built with Convex and TanStack Router.
 ## Stack
 
 - **TypeScript** - For type safety and improved developer experience
-- **TanStack Router** - File-based routing with full type safety
-- **Convex** - Reactive backend-as-a-service platform
-  - **Convex Auth** - Authentication with GitHub
+- [**TanStack Router**](https://tanstack.com/router/latest) - File-based routing with full type safety
+- [**Convex**](https://www.convex.dev/) - Reactive backend-as-a-service platform
+  - [**Convex Auth**](https://labs.convex.dev/auth) - Authentication with GitHub
   - [**Convex Agent Component**](https://convex.dev/docs/agent-component) - AI Agent framework built on Convex that handles storage of chat history
-- **OpenRouter** - AI model gateway
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **shadcn/ui** - Reusable UI components
-- **Turborepo** - Optimized monorepo build system
+- [**OpenRouter**](https://openrouter.ai/) - AI model gateway
+- [**TailwindCSS**](https://tailwindcss.com/) - Utility-first CSS for rapid UI development
+- [**shadcn/ui**](https://ui.shadcn.com/) - Reusable UI components
+- [**Turborepo**](https://turborepo.com/) - Optimized monorepo build system
 
 ## Getting Started
 
@@ -93,7 +93,7 @@ Next, you’ll need to setup a GitHub OAuth app, so that you can sign into the a
 
 ### OpenRouter Setup
 
-To ensure your OpenRouter API key (starts with `sk-or-`) is not exposed in the client-side code, you will need to set it as an environment variable **in your Convex environment**.
+To ensure [your OpenRouter API key](https://openrouter.ai/settings/keys) (starts with `sk-or-`) is not exposed in the client-side code, you will need to set it as an environment variable **in your Convex environment**.
 
 ```bash
 cd packages/backend
@@ -102,7 +102,7 @@ npx convex env set OPENROUTER_API_KEY <your-openrouter-api-key>
 
 ### Jina Search Setup
 
-To enable web search, add your Jina API token to your Convex environment:
+To enable web search, add [your Jina API token](https://jina.ai/) to your Convex environment:
 
 ```bash
 cd packages/backend
