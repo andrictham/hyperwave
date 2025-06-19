@@ -5,11 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useLocalStorageBoolean, useLocalStorageString } from "@/hooks/use-local-storage";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  useLocalStorageBoolean,
-  useLocalStorageString,
-} from "@/hooks/use-local-storage";
 import { cn } from "@/lib/utils";
 import type { MessageDoc } from "@convex-dev/agent";
 import {
@@ -22,7 +19,7 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useQuery } from "convex-helpers/react/cache";
 import { useAction, useMutation } from "convex/react";
-import { ArrowDown, ArrowUp, Check, Globe, Loader2, Paperclip } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Globe, Image, Loader2, Paperclip } from "lucide-react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
 import { Message } from "./Message";
@@ -93,8 +90,10 @@ export function ChatView({
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [modelFilter, setModelFilter] = useState("");
   const [activeModelIndex, setActiveModelIndex] = useState(0);
-  const [webSearchEnabled, setWebSearchEnabled] =
-    useLocalStorageBoolean("hyperwave-web-search", false);
+  const [webSearchEnabled, setWebSearchEnabled] = useLocalStorageBoolean(
+    "hyperwave-web-search",
+    false,
+  );
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -390,16 +389,27 @@ export function ChatView({
             className="hidden"
           />
           <div className="flex items-end gap-2">
-            {/* <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isCreatingThread}
-            >
-              <Paperclip className="h-4 w-4" />
-              <span className="sr-only">Attach file</span>
-            </Button> */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isCreatingThread || !selectedModelInfo?.supportsImageUploads}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    <span className="sr-only">Attach file</span>
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!selectedModelInfo?.supportsImageUploads && (
+                <TooltipContent sideOffset={4}>
+                  This model doesn’t support image uploads
+                </TooltipContent>
+              )}
+            </Tooltip>
             {/* Model selection */}
             <Popover
               open={modelMenuOpen}
@@ -474,6 +484,18 @@ export function ChatView({
                               </span>
                             </TooltipTrigger>
                             <TooltipContent sideOffset={4}>Supports web search</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {m.supportsImageUploads && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex ml-1">
+                                <Image className="h-4 w-4" />
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent sideOffset={4}>
+                              This model supports image uploads
+                            </TooltipContent>
                           </Tooltip>
                         )}
                       </span>
