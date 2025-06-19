@@ -14,13 +14,19 @@ export const allowedModels = [
     id: "qwen/qwen3-32b-04-28:free",
     name: "Qwen3 32B",
     gateway: "openrouter",
+    supportsTools: false,
+  },
+  {
+    id: "meta-llama/llama-3.3-70b-instruct:free",
+    name: "Llama 3.3 70B Instruct",
+    gateway: "openrouter",
     supportsTools: true,
   },
   {
     id: "qwen/qwq-32b:free",
     name: "Qwen QWQ 32B",
     gateway: "openrouter",
-    supportsTools: true,
+    supportsTools: false,
   },
   {
     id: "mistralai/devstral-small:free",
@@ -38,11 +44,17 @@ export const allowedModels = [
     id: "deepseek/deepseek-r1-0528:free",
     name: "DeepSeek R1",
     gateway: "openrouter",
-    supportsTools: true,
+    supportsTools: false,
   },
   {
     id: "deepseek/deepseek-r1:free",
     name: "DeepSeek R1 Legacy",
+    gateway: "openrouter",
+    supportsTools: false,
+  },
+  {
+    id: "mistralai/mistral-7b-instruct:free",
+    name: "Mistral 7B Instruct",
     gateway: "openrouter",
     supportsTools: true,
   },
@@ -50,7 +62,7 @@ export const allowedModels = [
     id: "mistralai/mistral-nemo:free",
     name: "Mistral Nemo",
     gateway: "openrouter",
-    supportsTools: true,
+    supportsTools: false,
   },
   {
     id: "meta-llama/llama-3.3-8b-instruct:free",
