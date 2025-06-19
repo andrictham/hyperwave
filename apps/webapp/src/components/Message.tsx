@@ -3,7 +3,7 @@ import { Markdown } from "@/components/markdown";
 import { cn } from "@/lib/utils";
 import type { UIMessage } from "@convex-dev/agent/react";
 
-import { ReasoningDetails } from "./ui/reasoning-details";
+import { ReasoningAndToolDetails } from "./ui/reasoning-tool-details";
 
 /** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {
@@ -74,8 +74,12 @@ export function Message({ m }: { m: UIMessage }) {
   // Reasoning toggle
   const isStreaming = m.status === "streaming";
   const hasText = m.parts.some((p) => p.type === "text");
-  const reasoning = m.parts.filter((p) => p.type === "reasoning");
-  const others = m.parts.filter((p) => p.type !== "reasoning");
+  const toolDetailsParts = m.parts.filter(
+    (p) => p.type === "reasoning" || p.type === "tool-invocation",
+  );
+  const others = m.parts.filter(
+    (p) => p.type !== "reasoning" && p.type !== "tool-invocation",
+  );
 
   return (
     <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
@@ -87,11 +91,14 @@ export function Message({ m }: { m: UIMessage }) {
         </div>
       ) : m.role === "assistant" ? (
         <div className="w-full">
-          {reasoning.length > 0 && (
+          {toolDetailsParts.length > 0 && (
             <div className="mb-10">
-              <ReasoningDetails isStreaming={isStreaming && !hasText}>
-                {renderParts(reasoning)}
-              </ReasoningDetails>
+              <ReasoningAndToolDetails
+                isStreaming={isStreaming && !hasText}
+                type={toolDetailsParts.some((p) => p.type === "tool-invocation") ? "tool" : "reasoning"}
+              >
+                {renderParts(toolDetailsParts)}
+              </ReasoningAndToolDetails>
             </div>
           )}
           {renderParts(others)}

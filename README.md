@@ -14,7 +14,7 @@
 ### Planned
 
 - [ ] Bring your own key via OpenRouter
-- [ ] Web search via Jina
+- [x] Web search via Jina
 - [ ] File and image attachment support
 - [ ] Chat branching (when the Convex Agent component supports it)
 - [ ] Edit message and message versioning
@@ -99,6 +99,15 @@ cd packages/backend
 npx convex env set OPENROUTER_API_KEY <your-openrouter-api-key>
 ```
 
+### Jina Search Setup
+
+To enable web search, add your Jina API token to your Convex environment:
+
+```bash
+cd packages/backend
+npx convex env set JINA_API_KEY <your-jina-api-key>
+```
+
 ## Deploying to Production
 
 To deploy your app to production, follow these steps:
@@ -106,7 +115,8 @@ To deploy your app to production, follow these steps:
 1. Convex Auth: Follow the steps [here](https://labs.convex.dev/auth/production).
 2. GitHub OAuth: You must create a new GitHub OAuth app for production, and then set the environment variables in your Production Convex environment in the Convex dashboard. Follow the guide [here](https://labs.convex.dev/auth/config/oauth/github).
 3. OpenRouter: You must set the `OPENROUTER_API_KEY` environment variable in your Production Convex environment in the Convex dashboard.
-4. Deploy the app: You can deploy the frontend (`apps/webapp`) to either Netlify or Vercel. Follow the official Convex deployment guides [here](https://docs.convex.dev/production/hosting/).
+4. Jina API: You must set the `JINA_API_KEY` environment variable in your Production Convex environment.
+5. Deploy the app: You can deploy the frontend (`apps/webapp`) to either Netlify or Vercel. Follow the official Convex deployment guides [here](https://docs.convex.dev/production/hosting/).
 
 Read the Convex guide on [production deployment](https://docs.convex.dev/production) for more information.
 
