@@ -119,7 +119,7 @@ export function ThreadHeader({ threadId }: { threadId?: string }) {
   }, [thread?.title]);
 
   return (
-    <header className="flex items-center justify-between h-14 border-b px-4 relative">
+    <header className="flex items-center justify-between h-16 border-b px-4 relative">
       <SidebarTrigger className="mr-2" />
       <div className="flex w-full justify-center">
         {isEditing ? (
@@ -159,7 +159,7 @@ export function ThreadHeader({ threadId }: { threadId?: string }) {
         ) : (
           <button
             type="button"
-            className="w-auto max-w-[70vw] truncate text-md sm:text-md md:text-md lg:text-lg font-semibold px-2 py-1 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="w-auto max-w-[70vw] truncate text-sm sm:text-md md:text-lg lg:text-lg font-semibold font-stretch-120% tracking-normal px-2 py-1 rounded-md hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             onClick={handleStartEditing}
             disabled={!threadId}
           >

@@ -140,7 +140,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Chats</SidebarGroupLabel>
+          <SidebarGroupLabel className="sticky top-0 z-10 bg-sidebar font-black font-stretch-200%">
+            Chats
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {threads.length === 0 ? (
@@ -246,15 +248,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <NavSecondary className="mt-auto">
-          <Link to="/">
-            <Button variant="brand" size="lg" className="overflow-visible z-10 w-full">
-              New Chat
-            </Button>
-          </Link>
-        </NavSecondary>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="bg-sidebar z-10 px-2 pb-1">
+        <Link to="/">
+          <Button
+            variant="brand"
+            size="lg"
+            className="overflow-visible z-10 w-full font-medium font-stretch-120% tracking-normal"
+          >
+            New Chat
+          </Button>
+        </Link>
         {user && (
           <NavUser
             user={{

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,100..900;1,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Faculty+Glyphic&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -166,6 +166,30 @@
   --font-sans:
     "Archivo", "Inter", "Geist", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* Scrollbar with transparent gutters */
+* {
+  /* Consistent thin scrollbar appearance across browsers */
+  scrollbar-width: thin;
+  /* Thumb uses muted foreground; track (gutter) remains transparent */
+  scrollbar-color: var(--muted) transparent;
+}
+
+/* WebKit scrollbar support */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--muted);
+  border-radius: 9999px;
+  border: 2px solid transparent; /* Maintains transparent gutter around the thumb */
 }
 
 html,
