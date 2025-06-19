@@ -68,7 +68,7 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
           ? part.data
           : `data:${part.mimeType};base64,${part.data}`;
       return part.mimeType.startsWith("image/") ? (
-        <img src={url} alt="uploaded image" className="max-w-full h-auto rounded" />
+        <img src={url} alt="uploaded image" className="max-w-full h-auto p-6 rounded" />
       ) : null;
     }
     default:
