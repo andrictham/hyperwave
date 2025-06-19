@@ -175,7 +175,8 @@ export function ChatView({
     : [];
   const hasMessages = messageList.length > 0;
 
-  const isStreaming = messageList.some((m) => m.status === "streaming");
+  // TODO: Use isStreaming status to show loading state to the user above the chat input, and to let them stop generating as well.
+  // const isStreaming = messageList.some((m) => m.status === "streaming");
 
   const { scrollRef, contentRef, scrollToBottom, isAtBottom } = useStickToBottom({
     resize: "smooth",
@@ -369,7 +370,7 @@ export function ChatView({
                 }}
                 minRows={isMobile ? 2 : 3}
                 maxRows={6}
-                disabled={isCreatingThread || isStreaming}
+                disabled={isCreatingThread}
                 placeholder="Type a message..."
                 className={cn(
                   "border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:border-0",
@@ -397,7 +398,7 @@ export function ChatView({
                   size="icon"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isStreaming || isCreatingThread}
+                  disabled={isCreatingThread}
                 >
                   <Paperclip className="h-4 w-4" />
                   <span className="sr-only">Attach file</span>
@@ -513,7 +514,7 @@ export function ChatView({
                   size="icon"
                   variant="brand"
                   className="rounded-full ml-auto"
-                  disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
+                  disabled={!modelsLoaded || !prompt.trim() || isCreatingThread}
                 >
                   {isCreatingThread ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
