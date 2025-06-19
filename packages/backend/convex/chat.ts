@@ -1,9 +1,10 @@
-import { vStreamArgs } from "@convex-dev/agent";
+import { getFile, vStreamArgs } from "@convex-dev/agent";
+import type { FilePart, ImagePart, TextPart } from "ai";
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 
 import { requireOwnThread, requireUserId } from "../utils/threadOwnership";
-import { internal } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 import { internalAction, mutation, query } from "./_generated/server";
 import agent, { openrouter, webSearchTool } from "./agent";
 import { allowedModels, defaultModel } from "./models";
@@ -24,8 +25,9 @@ export const streamMessageAsynchronously = mutation({
     threadId: v.string(),
     model: v.optional(v.string()),
     useWebSearch: v.optional(v.boolean()),
+    fileIds: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { prompt, threadId, model, useWebSearch }) => {
+  handler: async (ctx, { prompt, threadId, model, useWebSearch, fileIds }) => {
     const userId = await requireUserId(ctx);
 
     if (!userId) {
@@ -34,10 +36,19 @@ export const streamMessageAsynchronously = mutation({
 
     await requireOwnThread(ctx, threadId);
 
-    // Save user message
+    const contentParts: Array<TextPart | ImagePart | FilePart> = [];
+    if (fileIds) {
+      for (const id of fileIds) {
+        const { filePart, imagePart } = await getFile(ctx, components.agent, id);
+        contentParts.push(imagePart ?? filePart);
+      }
+    }
+    contentParts.push({ type: "text", text: prompt });
+
     const { messageId } = await agent.saveMessage(ctx, {
       threadId,
-      prompt,
+      message: { role: "user", content: contentParts },
+      metadata: fileIds ? { fileIds } : undefined,
       // we're in a mutation, so skip embeddings for now. They'll be generated lazily when streaming text.
       skipEmbeddings: true,
     });

@@ -18,8 +18,8 @@ import {
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useQuery } from "convex-helpers/react/cache";
-import { useMutation } from "convex/react";
-import { ArrowDown, ArrowUp, Check, Globe, Loader2 } from "lucide-react";
+import { useAction, useMutation } from "convex/react";
+import { ArrowDown, ArrowUp, Check, Globe, Loader2, Paperclip } from "lucide-react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
 import { Message } from "./Message";
@@ -38,6 +38,7 @@ export function ChatView({
   onNewThread?: (id: string) => void;
 }) {
   const [prompt, setPrompt] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const modelsConfig = useQuery(api.models.listModels);
   const modelsLoaded = modelsConfig !== undefined;
   const [model, setModel] = useState<string>();
@@ -46,8 +47,14 @@ export function ChatView({
   const [activeModelIndex, setActiveModelIndex] = useState(0);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const handleFiles = (f: FileList | null) => {
+    if (!f) return;
+    setFiles(Array.from(f));
+  };
   useEffect(() => {
     if (modelsConfig && !model) {
       setModel(modelsConfig.defaultModel);
@@ -113,6 +120,7 @@ export function ChatView({
   );
 
   const createThread = useMutation(api.thread.createThread);
+  const uploadFile = useAction(api.files.uploadFile);
 
   const [isCreatingThread, setIsCreatingThread] = useState(false);
 
@@ -156,6 +164,22 @@ export function ChatView({
     e.preventDefault();
     const text = prompt.trim();
     if (!text || !modelsLoaded || !model) return;
+    const uploadedIds: string[] = [];
+    if (files.length > 0) {
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        const hashArray = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", buffer)));
+        const sha256 = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        const { fileId } = await uploadFile({
+          bytes: buffer,
+          mimeType: file.type,
+          filename: file.name,
+          sha256,
+        });
+        uploadedIds.push(fileId);
+      }
+      setFiles([]);
+    }
     if (threadId) {
       setPrompt("");
       try {
@@ -163,6 +187,7 @@ export function ChatView({
           threadId,
           prompt: text,
           model,
+          fileIds: uploadedIds,
           useWebSearch: webSearchEnabled,
         });
         formRef.current?.reset();
@@ -182,6 +207,7 @@ export function ChatView({
           threadId: newThreadId,
           prompt: text,
           model,
+          fileIds: uploadedIds,
           useWebSearch: webSearchEnabled,
         });
         formRef.current?.reset();
@@ -263,7 +289,31 @@ export function ChatView({
                   isCreatingThread && "opacity-50",
                 )}
               />
-              <div className="flex items-end">
+              {files.length > 0 && (
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  {files.map((f) => (
+                    <li key={f.name}>{f.name}</li>
+                  ))}
+                </ul>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={(e) => handleFiles(e.target.files)}
+                className="hidden"
+              />
+              <div className="flex items-end gap-2">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isStreaming || isCreatingThread}
+                >
+                  <Paperclip className="h-4 w-4" />
+                  <span className="sr-only">Attach file</span>
+                </Button>
                 <Popover
                   open={modelMenuOpen}
                   onOpenChange={(open) => {

@@ -11,6 +11,13 @@ import { query } from "./_generated/server";
  */
 export const allowedModels = [
   {
+    id: "mistralai/mistral-small-3.1-24b-instruct:free",
+    name: "Mistral Small 3.1 24B",
+    gateway: "openrouter",
+    supportsImages: true,
+    supportsTools: true,
+  },
+  {
     id: "qwen/qwen3-32b-04-28:free",
     name: "Qwen3 32B",
     gateway: "openrouter",
@@ -96,7 +103,8 @@ export const listModels = query({
         id: v.string(),
         name: v.string(),
         gateway: v.string(),
-        supportsTools: v.boolean(),
+        supportsTools: v.optional(v.boolean()),
+        supportsImages: v.optional(v.boolean()),
       }),
     ),
   }),
