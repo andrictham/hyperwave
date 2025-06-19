@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLocalStorageString } from "@/hooks/use-local-storage";
 import { cn } from "@/lib/utils";
 import type { MessageDoc } from "@convex-dev/agent";
 import {
@@ -85,7 +86,7 @@ export function ChatView({
   const [files, setFiles] = useState<File[]>([]);
   const modelsConfig = useQuery(api.models.listModels);
   const modelsLoaded = modelsConfig !== undefined;
-  const [model, setModel] = useState<string>();
+  const [model, setModel] = useLocalStorageString("hyperwave-last-model", "");
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [modelFilter, setModelFilter] = useState("");
   const [activeModelIndex, setActiveModelIndex] = useState(0);
@@ -100,10 +101,12 @@ export function ChatView({
     setFiles(Array.from(f));
   };
   useEffect(() => {
-    if (modelsConfig && !model) {
+    if (!modelsConfig) return;
+    const available = modelsConfig.models.some((m) => m.id === model);
+    if (model === "" || !available) {
       setModel(modelsConfig.defaultModel);
     }
-  }, [modelsConfig, model]);
+  }, [modelsConfig, model, setModel]);
 
   const filteredModels = useMemo<ModelInfo[]>(() => {
     if (!modelsConfig) return [];
@@ -137,11 +140,9 @@ export function ChatView({
     }
   }, [selectedModelInfo]);
 
-  // Focus the input when it's a new chat or when the component mounts
+  // Focus the input whenever the thread changes or the component mounts
   useEffect(() => {
-    if (!threadId && inputRef.current) {
-      inputRef.current.focus();
-    }
+    inputRef.current?.focus();
   }, [threadId]);
 
   const messages = threadId
