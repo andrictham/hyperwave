@@ -418,7 +418,10 @@ body {
     @apply underline underline-offset-2 decoration-primary text-primary transition-colors;
   }
   .prose a:hover {
-    @apply text-primary-foreground;
+    color: var(--color-sol-8);
+  }
+  .dark .prose a:hover {
+    color: var(--primary-foreground);
   }
   .prose blockquote {
     @apply border-l-2 pl-4 italic text-muted-foreground my-4;
