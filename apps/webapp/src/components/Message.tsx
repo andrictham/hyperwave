@@ -125,7 +125,11 @@ export function Message({ m, onRetry }: { m: UIMessageWithError; onRetry?: () =>
         >
           <span>{m.error}</span>
           {onRetry && (
-            <button type="button" onClick={onRetry} className="underline text-sm">
+            <button
+              type="button"
+              onClick={onRetry}
+              className="underline text-sm cursor-pointer hover:opacity-80 hover:text-destructive-foreground"
+            >
               Retry
             </button>
           )}
