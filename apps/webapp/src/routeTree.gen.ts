@@ -9,18 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
+import { Route as ChatLayoutRouteImport } from './routes/_chatLayout'
+import { Route as IndexRouteImport } from './routes/_chatLayout.index'
+import { Route as ChatThreadIdRouteImport } from './routes/_chatLayout.chat.$threadId'
+
+const ChatLayoutRoute = ChatLayoutRouteImport.update({
+  id: '/_chatLayout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ChatLayoutRoute,
 } as any)
 const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
   id: '/chat/$threadId',
   path: '/chat/$threadId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ChatLayoutRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -33,6 +39,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_chatLayout': typeof ChatLayoutRoute
   '/': typeof IndexRoute
   '/chat/$threadId': typeof ChatThreadIdRoute
 }
@@ -41,10 +48,13 @@ export interface FileRouteTypes {
   fullPaths: '/' | '/chat/$threadId'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/chat/$threadId'
-  id: '__root__' | '/' | '/chat/$threadId'
+  id: '__root__' | '/_chatLayout' | '/' | '/chat/$threadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  ChatLayoutRoute: typeof ChatLayoutRoute
+}
+export interface ChatLayoutRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatThreadIdRoute: typeof ChatThreadIdRoute
 }
@@ -56,21 +66,24 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ChatLayoutRoute
     }
     '/chat/$threadId': {
       id: '/chat/$threadId'
       path: '/chat/$threadId'
       fullPath: '/chat/$threadId'
       preLoaderRoute: typeof ChatThreadIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ChatLayoutRoute
     }
   }
 }
 
-const rootRouteChildren: RootRouteChildren = {
+const chatLayoutRouteChildren: ChatLayoutRouteChildren = {
   IndexRoute: IndexRoute,
   ChatThreadIdRoute: ChatThreadIdRoute,
+}
+const rootRouteChildren: RootRouteChildren = {
+  ChatLayoutRoute: ChatLayoutRoute._addFileChildren(chatLayoutRouteChildren),
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
