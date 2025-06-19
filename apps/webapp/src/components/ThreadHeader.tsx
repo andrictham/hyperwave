@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -13,7 +15,7 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
 import { useMutation } from "convex/react";
-import { Check, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
+import { Check, MoreHorizontal, Pencil, Plus, Trash2, X } from "lucide-react";
 
 /**
  * Component that displays the header with thread title, sidebar toggle, and thread actions
@@ -183,23 +185,37 @@ export function ThreadHeader({ threadId }: { threadId?: string }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
-                handleStartEditing();
-              }}
-            >
-              <Pencil className="mr-2 h-4 w-4" />
-              <span>Rename</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onSelect={(e) => e.preventDefault()}
-              onClick={handleDelete}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              <span>Delete</span>
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault();
+                  handleStartEditing();
+                }}
+              >
+                <Pencil className="mx-2 h-4 w-4" />
+                <span>Rename</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={(e) => e.preventDefault()}
+                onClick={handleDelete}
+              >
+                <Trash2 className="mx-2 h-4 w-4 text-destructive" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                onSelect={(e) => e.preventDefault()}
+                onClick={() => navigate({ to: "/" })}
+              >
+                <Plus className="mx-2 h-4 w-4" />
+                <span className="pr-10">New chat</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
