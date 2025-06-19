@@ -6,13 +6,13 @@ import { action } from "./_generated/server";
 
 export const uploadFile = action({
   args: {
-    bytes: v.array(v.int8()),
+    data: v.bytes(),
     mimeType: v.string(),
     filename: v.optional(v.string()),
     sha256: v.optional(v.string()),
   },
-  handler: async (ctx, { bytes, mimeType, filename, sha256 }) => {
-    const blob = new Blob([new Uint8Array(bytes)], { type: mimeType });
+  handler: async (ctx, { data, mimeType, filename, sha256 }) => {
+    const blob = new Blob([data], { type: mimeType });
     const { file } = await storeFile(ctx, components.agent, blob, filename, sha256);
     return file;
   },

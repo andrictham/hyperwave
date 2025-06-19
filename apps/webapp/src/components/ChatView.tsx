@@ -18,6 +18,8 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useQuery } from "convex-helpers/react/cache";
 import { useAction, useMutation } from "convex/react";
+import { anyApi } from "convex/browser";
+import type { FunctionReference } from "convex/server";
 import { ArrowDown, ArrowUp, Check, Loader2, Paperclip } from "lucide-react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
@@ -112,7 +114,22 @@ export function ChatView({
   );
 
   const createThread = useMutation(api.thread.createThread);
-  const uploadFile = useAction(api.files.uploadFile);
+  type UploadFileArgs = {
+    data: ArrayBuffer;
+    mimeType: string;
+    filename?: string;
+    sha256?: string;
+  };
+  type UploadFileReturn = {
+    url: string;
+    fileId: string;
+    storageId: string;
+    hash: string;
+    filename?: string;
+  };
+  const uploadFile = useAction<
+    FunctionReference<"action", "public", UploadFileArgs, UploadFileReturn>
+  >(anyApi.files.uploadFile);
 
   const [isCreatingThread, setIsCreatingThread] = useState(false);
 
@@ -160,11 +177,12 @@ export function ChatView({
     if (files.length > 0) {
       for (const file of files) {
         const buffer = await file.arrayBuffer();
-        const bytes = Array.from(new Int8Array(buffer));
-        const hashArray = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", buffer)));
-        const sha256 = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+        const shaArray = new Uint8Array(await crypto.subtle.digest("SHA-256", buffer));
+        const sha256 = Array.from(shaArray)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
         const { fileId } = await uploadFile({
-          bytes,
+          data: buffer,
           mimeType: file.type,
           filename: file.name,
           sha256,
