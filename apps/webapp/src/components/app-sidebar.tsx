@@ -2,7 +2,6 @@ import * as React from "react";
 import { useState } from "react";
 import logomarkDark from "@/assets/hyperwave-logomark-dark.png";
 import logomarkLight from "@/assets/hyperwave-logomark-light.png";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
   DropdownMenu,

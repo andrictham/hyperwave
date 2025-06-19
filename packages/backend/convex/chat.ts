@@ -1,11 +1,12 @@
-import { vStreamArgs } from "@convex-dev/agent";
+import { getFile, vStreamArgs } from "@convex-dev/agent";
+import type { FilePart, ImagePart, TextPart } from "ai";
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 
 import { requireOwnThread, requireUserId } from "../utils/threadOwnership";
-import { internal } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 import { internalAction, mutation, query } from "./_generated/server";
-import agent, { openrouter } from "./agent";
+import agent, { openrouter, webSearchTool } from "./agent";
 import { allowedModels, defaultModel } from "./models";
 
 /**
@@ -23,8 +24,10 @@ export const streamMessageAsynchronously = mutation({
     prompt: v.string(), // User message
     threadId: v.string(),
     model: v.optional(v.string()),
+    useWebSearch: v.optional(v.boolean()),
+    fileIds: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { prompt, threadId, model }) => {
+  handler: async (ctx, { prompt, threadId, model, useWebSearch, fileIds }) => {
     const userId = await requireUserId(ctx);
 
     if (!userId) {
@@ -33,10 +36,19 @@ export const streamMessageAsynchronously = mutation({
 
     await requireOwnThread(ctx, threadId);
 
-    // Save user message
+    const contentParts: Array<TextPart | ImagePart | FilePart> = [];
+    if (fileIds) {
+      for (const id of fileIds) {
+        const { filePart, imagePart } = await getFile(ctx, components.agent, id);
+        contentParts.push(imagePart ?? filePart);
+      }
+    }
+    contentParts.push({ type: "text", text: prompt });
+
     const { messageId } = await agent.saveMessage(ctx, {
       threadId,
-      prompt,
+      message: { role: "user", content: contentParts },
+      metadata: fileIds ? { fileIds } : undefined,
       // we're in a mutation, so skip embeddings for now. They'll be generated lazily when streaming text.
       skipEmbeddings: true,
     });
@@ -51,6 +63,7 @@ export const streamMessageAsynchronously = mutation({
       threadId,
       promptMessageId: messageId,
       model,
+      useWebSearch,
     });
 
     return { threadId };
@@ -58,15 +71,38 @@ export const streamMessageAsynchronously = mutation({
 });
 
 export const streamMessage = internalAction({
-  args: { promptMessageId: v.string(), threadId: v.string(), model: v.optional(v.string()) },
-  handler: async (ctx, { promptMessageId, threadId, model }) => {
+  args: {
+    promptMessageId: v.string(),
+    threadId: v.string(),
+    model: v.optional(v.string()),
+    useWebSearch: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { promptMessageId, threadId, model, useWebSearch }) => {
     const { thread } = await agent.continueThread(ctx, { threadId });
     const modelId = model && isAllowedModel(model) ? model : defaultModel;
-    const result = await thread.streamText(
-      { promptMessageId, model: openrouter.chat(modelId) },
-      { saveStreamDeltas: true },
-    );
-    await result.consumeStream();
+    try {
+      const result = await thread.streamText(
+        {
+          promptMessageId,
+          model: openrouter.chat(modelId),
+          tools: useWebSearch ? { webSearch: webSearchTool } : undefined,
+          maxSteps: 5,
+        },
+        { saveStreamDeltas: true },
+      );
+      await result.consumeStream();
+    } catch (unknownError) {
+      const error =
+        unknownError instanceof Error
+          ? unknownError
+          : new Error(String(unknownError));
+      if (error.name === "AI_TypeValidationError") {
+        console.error("LLM returned invalid response", error);
+        throw new ConvexError("The AI service returned an invalid response.");
+      }
+      console.error("Error streaming message", error);
+      throw new ConvexError(error.message);
+    }
   },
 });
 

@@ -11,9 +11,11 @@
 import type * as agent from "../agent.js";
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
+import type * as files from "../files.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as models from "../models.js";
+import type * as search from "../search.js";
 import type * as thread from "../thread.js";
 
 import type {
@@ -34,9 +36,11 @@ declare const fullApi: ApiFromModules<{
   agent: typeof agent;
   auth: typeof auth;
   chat: typeof chat;
+  files: typeof files;
   healthCheck: typeof healthCheck;
   http: typeof http;
   models: typeof models;
+  search: typeof search;
   thread: typeof thread;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
