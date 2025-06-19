@@ -11,13 +11,6 @@ import { query } from "./_generated/server";
  */
 export const allowedModels = [
   {
-    id: "mistralai/mistral-small-3.1-24b-instruct:free",
-    name: "Mistral Small 3.1 24B",
-    gateway: "openrouter",
-    supportsImages: true,
-    supportsTools: true,
-  },
-  {
     id: "qwen/qwen3-32b-04-28:free",
     name: "Qwen3 32B",
     gateway: "openrouter",
@@ -34,6 +27,13 @@ export const allowedModels = [
     name: "Qwen QWQ 32B",
     gateway: "openrouter",
     supportsTools: false,
+  },
+  {
+    id: "mistralai/mistral-small-3.1-24b-instruct:free",
+    name: "Mistral Small 3.1 24B",
+    gateway: "openrouter",
+    supportsImages: true,
+    supportsTools: true,
   },
   {
     id: "mistralai/devstral-small:free",
