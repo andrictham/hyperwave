@@ -178,7 +178,7 @@ export function ThreadHeader({ threadId }: { threadId?: string }) {
         <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!threadId}>
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className={`h-4 w-4 ${!threadId ? "opacity-0" : "opacity-100"}`} />
               <span className="sr-only">Thread actions</span>
             </Button>
           </DropdownMenuTrigger>
