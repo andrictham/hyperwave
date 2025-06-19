@@ -8,8 +8,6 @@ export const Route = createFileRoute("/")({
 function HomeComponent() {
   const navigate = useNavigate();
   return (
-    <ChatView
-      onNewThread={(id) => navigate({ to: "/chat/$threadId", params: { threadId: id } })}
-    />
+    <ChatView onNewThread={(id) => navigate({ to: "/chat/$threadId", params: { threadId: id } })} />
   );
 }
