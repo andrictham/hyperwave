@@ -68,7 +68,7 @@ export function Markdown({ children }: MarkdownProps) {
                 theme={"one-dark-pro"}
                 addDefaultStyles={false}
                 as="pre"
-                className="w-full break-words whitespace-pre-wrap overflow-x-auto"
+                className="w-full whitespace-pre-wrap overflow-x-auto break-all sm:break-normal"
               >
                 {code}
               </ShikiHighlighter>
