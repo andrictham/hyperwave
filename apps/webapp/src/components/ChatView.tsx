@@ -389,6 +389,7 @@ export function ChatView({
             className="hidden"
           />
           <div className="flex items-end gap-2">
+            {/* File upload */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
@@ -423,7 +424,9 @@ export function ChatView({
             >
               <PopoverTrigger asChild>
                 <Button type="button" variant="outline" size="default" disabled={!modelsLoaded}>
-                  {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
+                  <span className="max-w-[130px] sm:max-w-full truncate">
+                    {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
+                  </span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent
