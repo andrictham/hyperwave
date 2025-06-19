@@ -52,7 +52,7 @@ pnpm install
 There are two .env files used in this project that you must specify when working locally:
 
 - `/apps/webapp/.env` - Environment variables for the webapp
-  - `VITE_CONVEX_URL` - URL of the Convex server, e.g. “https://lively-dog-999.convex.cloud” which you can find in the Convex dashboard
+  - `VITE_CONVEX_URL` - URL of the Convex server, e.g. https://lively-dog-999.convex.cloud which you can find in the Convex dashboard
 - `/packages/backend/.env` - Environment variables for the Convex server. This will be auto-generated for you when you run `pnpm dev:setup`
 
 ## Development Setup
