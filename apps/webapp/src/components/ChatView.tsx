@@ -308,7 +308,7 @@ export function ChatView({
       <main
         ref={scrollRef}
         className={cn(
-          "relative flex-1 overflow-y-auto p-4 w-full max-w-[768px] mx-auto no-scrollbar ",
+          "relative flex-1 mx-auto w-full max-w-[768px] px-4 pt-4 pb-8 overflow-y-auto no-scrollbar",
           hasMessages ? undefined : "flex flex-col items-center justify-center ",
         )}
       >
