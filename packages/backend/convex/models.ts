@@ -33,13 +33,13 @@ export const allowedModels = [
     name: "Mistral Small 3.1 24B",
     gateway: "openrouter",
     supportsImageUploads: true,
-    supportsTools: true,
+    supportsTools: false,
   },
   {
     id: "mistralai/devstral-small:free",
     name: "Devstral Small",
     gateway: "openrouter",
-    supportsTools: true,
+    supportsTools: false,
   },
   {
     id: "deepseek/deepseek-chat-v3-0324:free",
