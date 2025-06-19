@@ -385,7 +385,7 @@ export function ChatView({
             className="hidden"
           />
           <div className="flex items-end gap-2">
-            <Button
+            {/* <Button
               type="button"
               size="icon"
               variant="outline"
@@ -394,7 +394,7 @@ export function ChatView({
             >
               <Paperclip className="h-4 w-4" />
               <span className="sr-only">Attach file</span>
-            </Button>
+            </Button> */}
             {/* Model selection */}
             <Popover
               open={modelMenuOpen}
