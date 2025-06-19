@@ -9,13 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import type { MessageDoc } from "@convex-dev/agent/client";
 import {
   optimisticallySendMessage,
   toUIMessages,
   useThreadMessages,
   type UIMessage,
 } from "@convex-dev/agent/react";
-import type { MessageDoc } from "@convex-dev/agent/client";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useQuery } from "convex-helpers/react/cache";
@@ -25,6 +25,19 @@ import { useStickToBottom } from "use-stick-to-bottom";
 
 import { Message } from "./Message";
 import { ThreadHeader } from "./ThreadHeader";
+
+/**
+ * Convert raw error messages from the backend into human friendly strings.
+ */
+function toFriendlyError(error: string): string {
+  if (error.includes("AI_TypeValidationError") || error.includes("Type validation failed")) {
+    return "The AI service returned an invalid response.";
+  }
+  if (error === "Internal Server Error") {
+    return "The AI service encountered an internal error.";
+  }
+  return error;
+}
 
 /** A UI message with optional error information. */
 export interface UIMessageWithError extends UIMessage {
@@ -42,10 +55,20 @@ function toUIMessagesWithError(
   const errorMap = new Map<string, string>();
   for (const m of messages) {
     if (m.error) {
-      errorMap.set(`${m.threadId}-${m.order}-${m.stepOrder}`, m.error);
+      errorMap.set(`${m.threadId}-${m.order}-${m.stepOrder}`, toFriendlyError(m.error));
     }
   }
   return ui.map((m) => ({ ...m, error: errorMap.get(m.key) }));
+}
+
+/**
+ * Extract a single string prompt from the text parts of a UI message.
+ */
+function extractPrompt(m: UIMessage): string {
+  return m.parts
+    .filter((p): p is { type: "text"; text: string } => p.type === "text")
+    .map((p) => (typeof p.text === "string" ? p.text : ""))
+    .join("");
 }
 
 /**
@@ -178,6 +201,38 @@ export function ChatView({
   const isMobile = useIsMobile();
 
   /**
+   * Retry sending a message when generation failed.
+   */
+  const retryFailedMessage = async (index: number) => {
+    const failed = messageList[index];
+    if (!failed || !threadId) return;
+    let promptToSend: string | undefined;
+    if (failed.role === "user") {
+      promptToSend = extractPrompt(failed);
+    } else {
+      const prevUser = [...messageList]
+        .slice(0, index)
+        .reverse()
+        .find((m) => m.role === "user");
+      if (prevUser) {
+        promptToSend = extractPrompt(prevUser);
+      }
+    }
+    if (!promptToSend || !model) return;
+    try {
+      await sendMessage({
+        threadId,
+        prompt: promptToSend,
+        model,
+        useWebSearch: webSearchEnabled,
+      });
+      scrollToBottom();
+    } catch (error) {
+      console.error("Retry failed", error);
+    }
+  };
+
+  /**
    * Submit handler for the message form. If a thread already exists it will
    * stream the message immediately. Otherwise a new thread is created first
    * and the message is optimistically streamed to that thread.
@@ -267,7 +322,14 @@ export function ChatView({
                 hasMessages ? "space-y-10" : "flex flex-col items-center justify-center",
               )}
             >
-              {hasMessages && messageList.map((m) => <Message key={m.key} m={m} />)}
+              {hasMessages &&
+                messageList.map((m, idx) => (
+                  <Message
+                    key={m.key}
+                    m={m}
+                    onRetry={m.error ? () => retryFailedMessage(idx) : undefined}
+                  />
+                ))}
               {!threadId && (
                 <>
                   <HyperwaveLogoVertical className="block sm:hidden h-18 sm:h-20 w-auto shrink-0 text-primary" />

@@ -75,18 +75,15 @@ function renderParts(parts: UIMessage["parts"]): JSX.Element[] {
 
 /**
  * Render a single message.
+ * @param onRetry Optional handler to resend the message when generation failed.
  */
-export function Message({ m }: { m: UIMessageWithError }) {
+export function Message({ m, onRetry }: { m: UIMessageWithError; onRetry?: () => void }) {
   // Reasoning toggle
   const isStreaming = m.status === "streaming";
   const hasText = m.parts.some((p) => p.type === "text");
   const reasoningParts = m.parts.filter((p) => p.type === "reasoning");
-  const toolInvocationParts = m.parts.filter(
-    (p) => p.type === "tool-invocation",
-  );
-  const others = m.parts.filter(
-    (p) => p.type !== "reasoning" && p.type !== "tool-invocation",
-  );
+  const toolInvocationParts = m.parts.filter((p) => p.type === "tool-invocation");
+  const others = m.parts.filter((p) => p.type !== "reasoning" && p.type !== "tool-invocation");
 
   return (
     <>
@@ -99,34 +96,40 @@ export function Message({ m }: { m: UIMessageWithError }) {
           </div>
         ) : m.role === "assistant" ? (
           <div className="w-full">
-          {reasoningParts.length > 0 && (
-            <div className="mb-10">
-              <ReasoningAndToolDetails
-                type="reasoning"
-                isStreaming={isStreaming && !hasText}
-              >
-                {renderParts(reasoningParts)}
-              </ReasoningAndToolDetails>
-            </div>
-          )}
-          {toolInvocationParts.length > 0 && (
-            <div className="mb-10">
-              <ReasoningAndToolDetails
-                type="tool"
-                isStreaming={isStreaming && !hasText}
-              >
-                {renderParts(toolInvocationParts)}
-              </ReasoningAndToolDetails>
-            </div>
-          )}
-          {renderParts(others)}
-        </div>
-      ) : (
-        <div className="w-full my-2">{renderParts(m.parts)}</div>
-      )}
+            {reasoningParts.length > 0 && (
+              <div className="mb-10">
+                <ReasoningAndToolDetails type="reasoning" isStreaming={isStreaming && !hasText}>
+                  {renderParts(reasoningParts)}
+                </ReasoningAndToolDetails>
+              </div>
+            )}
+            {toolInvocationParts.length > 0 && (
+              <div className="mb-10">
+                <ReasoningAndToolDetails type="tool" isStreaming={isStreaming && !hasText}>
+                  {renderParts(toolInvocationParts)}
+                </ReasoningAndToolDetails>
+              </div>
+            )}
+            {renderParts(others)}
+          </div>
+        ) : (
+          <div className="w-full my-2">{renderParts(m.parts)}</div>
+        )}
       </div>
       {m.error && (
-        <p className={cn("text-sm text-destructive mt-1", m.role === "user" && "text-right")}>{m.error}</p>
+        <p
+          className={cn(
+            "text-sm text-destructive mt-1 flex items-center gap-2",
+            m.role === "user" && "text-right justify-end",
+          )}
+        >
+          <span>{m.error}</span>
+          {onRetry && (
+            <button type="button" onClick={onRetry} className="underline text-sm">
+              Retry
+            </button>
+          )}
+        </p>
       )}
     </>
   );
