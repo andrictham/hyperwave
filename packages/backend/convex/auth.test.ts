@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { requireOwnThread, requireUserId, type Ctx } from "./threadOwnership";
+import { requireOwnThread, requireUserId, type Ctx } from "../utils/threadOwnership";
 
 function mockCtx(identity: { subject?: string | null }, thread?: { userId: string } | null): Ctx {
   return {
