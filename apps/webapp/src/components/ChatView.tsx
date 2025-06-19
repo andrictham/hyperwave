@@ -4,9 +4,9 @@ import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/log
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import {
@@ -19,7 +19,7 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useQuery } from "convex-helpers/react/cache";
 import { useMutation } from "convex/react";
-import { ArrowDown, ArrowUp, Check, Globe, Loader2, Wrench } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Globe, Loader2 } from "lucide-react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
 import { Message } from "./Message";
@@ -275,16 +275,8 @@ export function ChatView({
                   }}
                 >
                   <PopoverTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
+                    <Button type="button" variant="secondary" size="sm" disabled={!modelsLoaded}>
                       {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
-                      {selectedModelInfo?.supportsTools && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="ml-1 inline-flex"><Wrench className="h-3 w-3" /></span>
-                          </TooltipTrigger>
-                          <TooltipContent sideOffset={4}>Supports tool calling</TooltipContent>
-                        </Tooltip>
-                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -331,8 +323,8 @@ export function ChatView({
                             setModel(m.id);
                             setModelMenuOpen(false);
                           }}
-                          className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent hover:text-accent-foreground ${
-                            idx === activeModelIndex ? "bg-accent text-accent-foreground" : ""
+                          className={`flex w-full items-center justify-between px-3 py-1 text-left hover:bg-accent/50 hover:text-accent-foreground ${
+                            idx === activeModelIndex ? "bg-accent/50 text-accent-foreground" : ""
                           } ${m.id === model ? "font-semibold" : ""}`}
                         >
                           <span className="flex items-center gap-1">
@@ -340,9 +332,11 @@ export function ChatView({
                             {m.supportsTools && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="inline-flex"><Wrench className="h-3 w-3" /></span>
+                                  <span className="inline-flex ml-1">
+                                    <Globe className="h-4 w-4" />
+                                  </span>
                                 </TooltipTrigger>
-                                <TooltipContent sideOffset={4}>Supports tool calling</TooltipContent>
+                                <TooltipContent sideOffset={4}>Supports web search</TooltipContent>
                               </Tooltip>
                             )}
                           </span>
@@ -357,7 +351,7 @@ export function ChatView({
                     <TooltipTrigger asChild>
                       <Button
                         type="button"
-                        variant={webSearchEnabled ? "brand" : "outline"}
+                        variant={webSearchEnabled ? "toggleButtonEnabled" : "toggleButtonDisabled"}
                         size="sm"
                         disabled={!selectedModelInfo?.supportsTools}
                         onClick={() => setWebSearchEnabled((v) => !v)}
@@ -367,7 +361,9 @@ export function ChatView({
                       </Button>
                     </TooltipTrigger>
                     {!selectedModelInfo?.supportsTools && (
-                      <TooltipContent sideOffset={4}>This model doesn’t support search</TooltipContent>
+                      <TooltipContent sideOffset={4}>
+                        This model doesn’t support search
+                      </TooltipContent>
                     )}
                   </Tooltip>
                 </div>
