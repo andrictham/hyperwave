@@ -1,6 +1,7 @@
-# Hyperwave
+![image](https://github.com/user-attachments/assets/a30e8af8-8ab0-492e-af7d-c0cfaf29aa31)
 
-## An open-source AI chat app built with Convex and TanStack Router.
+# Hyperwave
+An open-source AI chat app built with Convex and TanStack Router.
 
 ## Features
 
