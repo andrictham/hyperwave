@@ -32,7 +32,7 @@ export const allowedModels = [
     id: "mistralai/mistral-small-3.1-24b-instruct:free",
     name: "Mistral Small 3.1 24B",
     gateway: "openrouter",
-    supportsImages: true,
+    supportsImageUploads: true,
     supportsTools: true,
   },
   {
@@ -86,7 +86,7 @@ export const listModels = query({
         name: v.string(),
         gateway: v.string(),
         supportsTools: v.optional(v.boolean()),
-        supportsImages: v.optional(v.boolean()),
+        supportsImageUploads: v.optional(v.boolean()),
       }),
     ),
   }),
