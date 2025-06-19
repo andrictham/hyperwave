@@ -18,7 +18,7 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useQuery } from "convex-helpers/react/cache";
 import { useMutation } from "convex/react";
-import { ArrowDown, ArrowUp, Check, Loader2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Globe, Loader2 } from "lucide-react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
 import { Message } from "./Message";
@@ -43,6 +43,7 @@ export function ChatView({
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [modelFilter, setModelFilter] = useState("");
   const [activeModelIndex, setActiveModelIndex] = useState(0);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -151,7 +152,12 @@ export function ChatView({
     if (threadId) {
       setPrompt("");
       try {
-        const result = await sendMessage({ threadId, prompt: text, model });
+        const result = await sendMessage({
+          threadId,
+          prompt: text,
+          model,
+          useWebSearch: webSearchEnabled,
+        });
         formRef.current?.reset();
         if (!threadId && onNewThread && result?.threadId) {
           onNewThread(result.threadId);
@@ -165,7 +171,12 @@ export function ChatView({
       try {
         const newThreadId = await createThread({});
         // Optimistically send the message but don't await it
-        void sendMessage({ threadId: newThreadId, prompt: text, model });
+        void sendMessage({
+          threadId: newThreadId,
+          prompt: text,
+          model,
+          useWebSearch: webSearchEnabled,
+        });
         formRef.current?.reset();
         setPrompt("");
         if (onNewThread) {
@@ -316,6 +327,15 @@ export function ChatView({
                     </div>
                   </PopoverContent>
                 </Popover>
+                <Button
+                  type="button"
+                  variant={webSearchEnabled ? "brand" : "outline"}
+                  size="sm"
+                  onClick={() => setWebSearchEnabled((v) => !v)}
+                >
+                  <Globe className="h-4 w-4" />
+                  <span>Search</span>
+                </Button>
                 <Button
                   type="submit"
                   size="icon"

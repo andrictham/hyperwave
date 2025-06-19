@@ -19,15 +19,18 @@ export const openrouter = createOpenRouter({
 const chatAgent = new Agent(components.agent, {
   chat: openrouter.chat(defaultModel),
   instructions: "You are a helpful assistant.",
-  tools: {
-    webSearch: createTool({
-      description: "Search the web using the Jina search API",
-      args: z.object({ query: z.string().describe("The search query") }),
-      handler: async (ctx, { query }): Promise<unknown> => {
-        return ctx.runAction(internal.search.webSearch, { query });
-      },
-    }),
-  },
+});
+
+/**
+ * Tool for performing a web search using the Jina API. This is exported
+ * separately so it can be provided per-message when needed.
+ */
+export const webSearchTool = createTool({
+  description: "Search the web using the Jina search API",
+  args: z.object({ query: z.string().describe("The search query") }),
+  // Explicitly annotate the return type to avoid type cycles in generated types.
+  handler: async (ctx, { query }): Promise<unknown> =>
+    ctx.runAction(internal.search.webSearch, { query }),
 });
 
 export default chatAgent;
