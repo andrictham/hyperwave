@@ -36,6 +36,12 @@ export const allowedModels = [
     supportsTools: true,
   },
   {
+    id: "mistralai/devstral-small:free",
+    name: "Devstral Small",
+    gateway: "openrouter",
+    supportsTools: true,
+  },
+  {
     id: "deepseek/deepseek-chat-v3-0324:free",
     name: "DeepSeek Chat v3",
     gateway: "openrouter",
@@ -50,6 +56,18 @@ export const allowedModels = [
   {
     id: "deepseek/deepseek-r1:free",
     name: "DeepSeek R1 Legacy",
+    gateway: "openrouter",
+    supportsTools: false,
+  },
+  {
+    id: "mistralai/mistral-7b-instruct:free",
+    name: "Mistral 7B Instruct",
+    gateway: "openrouter",
+    supportsTools: true,
+  },
+  {
+    id: "mistralai/mistral-nemo:free",
+    name: "Mistral Nemo",
     gateway: "openrouter",
     supportsTools: false,
   },
