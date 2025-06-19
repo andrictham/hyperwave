@@ -74,6 +74,7 @@ export const streamMessage = internalAction({
         promptMessageId,
         model: openrouter.chat(modelId),
         tools: useWebSearch ? { webSearch: webSearchTool } : undefined,
+        maxSteps: 5,
       },
       { saveStreamDeltas: true },
     );
