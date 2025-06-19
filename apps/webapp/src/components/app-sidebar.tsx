@@ -248,12 +248,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="bg-sidebar z-10 px-2 pb-1">
+      <SidebarFooter className="bg-sidebar z-10 px-2 pb-4">
         <Link to="/">
           <Button
             variant="brand"
             size="lg"
-            className="overflow-visible z-10 w-full font-medium font-stretch-120% tracking-normal"
+            className="overflow-visible z-10 w-full font-medium font-stretch-120% tracking-normal mb-3"
           >
             New Chat
           </Button>
