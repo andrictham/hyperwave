@@ -59,6 +59,18 @@ function renderPart(part: UIMessage["parts"][number]): React.ReactNode {
           </div>
         </div>
       );
+    case "file": {
+      const url =
+        part.data.startsWith("http://") ||
+        part.data.startsWith("https://") ||
+        part.data.startsWith("blob:") ||
+        part.data.startsWith("data:")
+          ? part.data
+          : `data:${part.mimeType};base64,${part.data}`;
+      return part.mimeType.startsWith("image/") ? (
+        <img src={url} alt="uploaded image" className="max-w-full h-auto rounded" />
+      ) : null;
+    }
     default:
       return null;
   }
