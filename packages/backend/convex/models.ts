@@ -14,41 +14,49 @@ export const allowedModels = [
     id: "qwen/qwen3-32b-04-28:free",
     name: "Qwen3 32B",
     gateway: "openrouter",
+    supportsTools: true,
   },
   {
     id: "qwen/qwq-32b:free",
     name: "Qwen QWQ 32B",
     gateway: "openrouter",
+    supportsTools: true,
   },
   {
     id: "mistralai/devstral-small:free",
     name: "Devstral Small",
     gateway: "openrouter",
+    supportsTools: true,
   },
   {
     id: "deepseek/deepseek-chat-v3-0324:free",
     name: "DeepSeek Chat v3",
     gateway: "openrouter",
+    supportsTools: true,
   },
   {
     id: "deepseek/deepseek-r1-0528:free",
     name: "DeepSeek R1",
     gateway: "openrouter",
+    supportsTools: true,
   },
   {
     id: "deepseek/deepseek-r1:free",
     name: "DeepSeek R1 Legacy",
     gateway: "openrouter",
+    supportsTools: true,
   },
   {
     id: "mistralai/mistral-nemo:free",
     name: "Mistral Nemo",
     gateway: "openrouter",
+    supportsTools: true,
   },
   {
     id: "meta-llama/llama-3.3-8b-instruct:free",
     name: "Llama 3.3 8B Instruct",
     gateway: "openrouter",
+    supportsTools: true,
   },
 ] as const;
 
@@ -71,7 +79,14 @@ export const listModels = query({
   args: {} as Record<never, never>,
   returns: v.object({
     defaultModel: v.string(),
-    models: v.array(v.object({ id: v.string(), name: v.string(), gateway: v.string() })),
+    models: v.array(
+      v.object({
+        id: v.string(),
+        name: v.string(),
+        gateway: v.string(),
+        supportsTools: v.boolean(),
+      }),
+    ),
   }),
   handler: async () => ({
     defaultModel,

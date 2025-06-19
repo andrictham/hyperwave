@@ -4,6 +4,7 @@ import { HyperwaveLogoHorizontal, HyperwaveLogoVertical } from "@/components/log
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -18,7 +19,7 @@ import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useQuery } from "convex-helpers/react/cache";
 import { useMutation } from "convex/react";
-import { ArrowDown, ArrowUp, Check, Globe, Loader2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Globe, Loader2, Wrench } from "lucide-react";
 import { useStickToBottom } from "use-stick-to-bottom";
 
 import { Message } from "./Message";
@@ -78,6 +79,12 @@ export function ChatView({
   }, [activeModelIndex, filteredModels]);
 
   const selectedModelInfo: ModelInfo | undefined = modelsConfig?.models.find((m) => m.id === model);
+
+  useEffect(() => {
+    if (selectedModelInfo && !selectedModelInfo.supportsTools) {
+      setWebSearchEnabled(false);
+    }
+  }, [selectedModelInfo]);
 
   // Focus the input when it's a new chat or when the component mounts
   useEffect(() => {
@@ -256,7 +263,7 @@ export function ChatView({
                   isCreatingThread && "opacity-50",
                 )}
               />
-              <div className="flex items-end justify-between">
+              <div className="flex items-end">
                 <Popover
                   open={modelMenuOpen}
                   onOpenChange={(open) => {
@@ -270,6 +277,14 @@ export function ChatView({
                   <PopoverTrigger asChild>
                     <Button type="button" variant="outline" size="sm" disabled={!modelsLoaded}>
                       {modelsLoaded ? (selectedModelInfo?.name ?? model) : "Loading..."}
+                      {selectedModelInfo?.supportsTools && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="ml-1 inline-flex"><Wrench className="h-3 w-3" /></span>
+                          </TooltipTrigger>
+                          <TooltipContent sideOffset={4}>Supports tool calling</TooltipContent>
+                        </Tooltip>
+                      )}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -320,27 +335,47 @@ export function ChatView({
                             idx === activeModelIndex ? "bg-accent text-accent-foreground" : ""
                           } ${m.id === model ? "font-semibold" : ""}`}
                         >
-                          <span>{m.name}</span>
+                          <span className="flex items-center gap-1">
+                            {m.name}
+                            {m.supportsTools && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex"><Wrench className="h-3 w-3" /></span>
+                                </TooltipTrigger>
+                                <TooltipContent sideOffset={4}>Supports tool calling</TooltipContent>
+                              </Tooltip>
+                            )}
+                          </span>
                           {m.id === model && <Check className="w-4 h-4" />}
                         </button>
                       ))}
                     </div>
                   </PopoverContent>
                 </Popover>
-                <Button
-                  type="button"
-                  variant={webSearchEnabled ? "brand" : "outline"}
-                  size="sm"
-                  onClick={() => setWebSearchEnabled((v) => !v)}
-                >
-                  <Globe className="h-4 w-4" />
-                  <span>Search</span>
-                </Button>
+                <div className="flex items-end gap-2 ml-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={webSearchEnabled ? "brand" : "outline"}
+                        size="sm"
+                        disabled={!selectedModelInfo?.supportsTools}
+                        onClick={() => setWebSearchEnabled((v) => !v)}
+                      >
+                        <Globe className="h-4 w-4" />
+                        <span>Search</span>
+                      </Button>
+                    </TooltipTrigger>
+                    {!selectedModelInfo?.supportsTools && (
+                      <TooltipContent sideOffset={4}>This model doesn’t support search</TooltipContent>
+                    )}
+                  </Tooltip>
+                </div>
                 <Button
                   type="submit"
                   size="icon"
                   variant="brand"
-                  className="rounded-full"
+                  className="rounded-full ml-auto"
                   disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
                 >
                   {isCreatingThread ? (
