@@ -15,6 +15,7 @@ import {
   useThreadMessages,
   type UIMessage,
 } from "@convex-dev/agent/react";
+import type { MessageDoc } from "@convex-dev/agent/client";
 import { api } from "@hyperwave/backend/convex/_generated/api";
 import type { ModelInfo } from "@hyperwave/backend/convex/models";
 import { useQuery } from "convex-helpers/react/cache";
@@ -24,6 +25,28 @@ import { useStickToBottom } from "use-stick-to-bottom";
 
 import { Message } from "./Message";
 import { ThreadHeader } from "./ThreadHeader";
+
+/** A UI message with optional error information. */
+export interface UIMessageWithError extends UIMessage {
+  /** Optional error string if the message failed. */
+  error?: string;
+}
+
+/**
+ * Convert MessageDoc objects to UI messages while preserving their error field.
+ */
+function toUIMessagesWithError(
+  messages: (MessageDoc & { streaming?: boolean })[],
+): UIMessageWithError[] {
+  const ui = toUIMessages(messages);
+  const errorMap = new Map<string, string>();
+  for (const m of messages) {
+    if (m.error) {
+      errorMap.set(`${m.threadId}-${m.order}-${m.stepOrder}`, m.error);
+    }
+  }
+  return ui.map((m) => ({ ...m, error: errorMap.get(m.key) }));
+}
 
 /**
  * Primary chat view showing the list of messages for a thread and a form to
@@ -124,7 +147,9 @@ export function ChatView({
 
   const [isCreatingThread, setIsCreatingThread] = useState(false);
 
-  const messageList: UIMessage[] = messages ? toUIMessages(messages.results ?? []) : [];
+  const messageList: UIMessageWithError[] = messages
+    ? toUIMessagesWithError(messages.results ?? [])
+    : [];
   const hasMessages = messageList.length > 0;
 
   const isStreaming = (messages as { streaming?: boolean } | undefined)?.streaming ?? false;

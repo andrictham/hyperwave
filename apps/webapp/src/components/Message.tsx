@@ -5,6 +5,12 @@ import type { UIMessage } from "@convex-dev/agent/react";
 
 import { ReasoningAndToolDetails } from "./ui/reasoning-tool-details";
 
+/** UIMessage extended with an optional error field. */
+export interface UIMessageWithError extends UIMessage {
+  /** Error message associated with this UI message, if any. */
+  error?: string;
+}
+
 /** Determine if an object returned from the agent contains a `result` field. */
 function hasResult(value: unknown): value is { result: unknown } {
   return typeof value === "object" && value !== null && "result" in value;
@@ -70,7 +76,7 @@ function renderParts(parts: UIMessage["parts"]): JSX.Element[] {
 /**
  * Render a single message.
  */
-export function Message({ m }: { m: UIMessage }) {
+export function Message({ m }: { m: UIMessageWithError }) {
   // Reasoning toggle
   const isStreaming = m.status === "streaming";
   const hasText = m.parts.some((p) => p.type === "text");
@@ -83,15 +89,16 @@ export function Message({ m }: { m: UIMessage }) {
   );
 
   return (
-    <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
-      {m.role === "user" ? (
-        <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] w-fit">
-          {m.parts.map((part: UIMessage["parts"][number], index: number) => (
-            <div key={index}>{renderPart(part)}</div>
-          ))}
-        </div>
-      ) : m.role === "assistant" ? (
-        <div className="w-full">
+    <>
+      <div key={m.key} className={cn("flex w-full", m.role === "user" && "justify-end")}>
+        {m.role === "user" ? (
+          <div className="bg-secondary text-secondary-foreground text-lg font-normal leading-[140%] tracking-[0.18px] sm:text-base sm:leading-[130%] sm:tracking-[0.16px] rounded-xl px-2 py-1 shadow max-w-[70%] w-fit">
+            {m.parts.map((part: UIMessage["parts"][number], index: number) => (
+              <div key={index}>{renderPart(part)}</div>
+            ))}
+          </div>
+        ) : m.role === "assistant" ? (
+          <div className="w-full">
           {reasoningParts.length > 0 && (
             <div className="mb-10">
               <ReasoningAndToolDetails
@@ -117,6 +124,10 @@ export function Message({ m }: { m: UIMessage }) {
       ) : (
         <div className="w-full my-2">{renderParts(m.parts)}</div>
       )}
-    </div>
+      </div>
+      {m.error && (
+        <p className={cn("text-sm text-destructive mt-1", m.role === "user" && "text-right")}>{m.error}</p>
+      )}
+    </>
   );
 }
