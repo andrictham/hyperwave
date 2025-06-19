@@ -2,7 +2,7 @@ import { ChatView } from "@/components/ChatView";
 import { RedirectErrorBoundary } from "@/components/redirect-error-boundary";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/chat/$threadId")({
+export const Route = createFileRoute("/_chatLayout/chat/$threadId")({
   component: ThreadRoute,
 });
 

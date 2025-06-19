@@ -9,68 +9,98 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ChatThreadIdRouteImport } from './routes/chat.$threadId'
+import { Route as ChatLayoutRouteImport } from './routes/_chatLayout'
+import { Route as ChatLayoutIndexRouteImport } from './routes/_chatLayout.index'
+import { Route as ChatLayoutChatThreadIdRouteImport } from './routes/_chatLayout.chat.$threadId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ChatLayoutRoute = ChatLayoutRouteImport.update({
+  id: '/_chatLayout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChatThreadIdRoute = ChatThreadIdRouteImport.update({
+const ChatLayoutIndexRoute = ChatLayoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ChatLayoutRoute,
+} as any)
+const ChatLayoutChatThreadIdRoute = ChatLayoutChatThreadIdRouteImport.update({
   id: '/chat/$threadId',
   path: '/chat/$threadId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ChatLayoutRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
+  '': typeof ChatLayoutRouteWithChildren
+  '/': typeof ChatLayoutIndexRoute
+  '/chat/$threadId': typeof ChatLayoutChatThreadIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
+  '/': typeof ChatLayoutIndexRoute
+  '/chat/$threadId': typeof ChatLayoutChatThreadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/chat/$threadId': typeof ChatThreadIdRoute
+  '/_chatLayout': typeof ChatLayoutRouteWithChildren
+  '/_chatLayout/': typeof ChatLayoutIndexRoute
+  '/_chatLayout/chat/$threadId': typeof ChatLayoutChatThreadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/chat/$threadId'
+  fullPaths: '' | '/' | '/chat/$threadId'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/chat/$threadId'
-  id: '__root__' | '/' | '/chat/$threadId'
+  id:
+    | '__root__'
+    | '/_chatLayout'
+    | '/_chatLayout/'
+    | '/_chatLayout/chat/$threadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ChatThreadIdRoute: typeof ChatThreadIdRoute
+  ChatLayoutRoute: typeof ChatLayoutRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/_chatLayout': {
+      id: '/_chatLayout'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof ChatLayoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chat/$threadId': {
-      id: '/chat/$threadId'
+    '/_chatLayout/': {
+      id: '/_chatLayout/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof ChatLayoutIndexRouteImport
+      parentRoute: typeof ChatLayoutRoute
+    }
+    '/_chatLayout/chat/$threadId': {
+      id: '/_chatLayout/chat/$threadId'
       path: '/chat/$threadId'
       fullPath: '/chat/$threadId'
-      preLoaderRoute: typeof ChatThreadIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof ChatLayoutChatThreadIdRouteImport
+      parentRoute: typeof ChatLayoutRoute
     }
   }
 }
 
+interface ChatLayoutRouteChildren {
+  ChatLayoutIndexRoute: typeof ChatLayoutIndexRoute
+  ChatLayoutChatThreadIdRoute: typeof ChatLayoutChatThreadIdRoute
+}
+
+const ChatLayoutRouteChildren: ChatLayoutRouteChildren = {
+  ChatLayoutIndexRoute: ChatLayoutIndexRoute,
+  ChatLayoutChatThreadIdRoute: ChatLayoutChatThreadIdRoute,
+}
+
+const ChatLayoutRouteWithChildren = ChatLayoutRoute._addFileChildren(
+  ChatLayoutRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ChatThreadIdRoute: ChatThreadIdRoute,
+  ChatLayoutRoute: ChatLayoutRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
