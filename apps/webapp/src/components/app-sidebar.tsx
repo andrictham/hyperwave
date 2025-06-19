@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useState } from "react";
-import { useParams } from "@tanstack/react-router";
 import logomarkDark from "@/assets/hyperwave-logomark-dark.png";
 import logomarkLight from "@/assets/hyperwave-logomark-light.png";
 import { NavUser } from "@/components/nav-user";
@@ -25,7 +24,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { api } from "@hyperwave/backend/convex/_generated/api";
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "convex-helpers/react/cache";
 import { useMutation } from "convex/react";
 import { Check, MessagesSquare, MoreHorizontal, Pencil, Trash2, X } from "lucide-react";
