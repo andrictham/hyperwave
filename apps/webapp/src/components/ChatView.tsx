@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import {
   optimisticallySendMessage,
@@ -133,6 +134,8 @@ export function ChatView({
     return () => observer.disconnect();
   }, []);
 
+  const isMobile = useIsMobile();
+
   /**
    * Submit handler for the message form. If a thread already exists it will
    * stream the message immediately. Otherwise a new thread is created first
@@ -233,7 +236,7 @@ export function ChatView({
                     formRef.current?.requestSubmit();
                   }
                 }}
-                minRows={3}
+                minRows={isMobile ? 2 : 3}
                 maxRows={6}
                 disabled={isCreatingThread || isStreaming}
                 placeholder="Type a message..."
@@ -316,6 +319,7 @@ export function ChatView({
                 <Button
                   type="submit"
                   size="icon"
+                  variant="brand"
                   className="rounded-full"
                   disabled={!modelsLoaded || !prompt.trim() || isStreaming || isCreatingThread}
                 >
