@@ -6,13 +6,19 @@ import { cn } from "@/lib/utils";
 import { ChevronRight, Lightbulb, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
 
-interface ReasoningDetailsProps {
+interface ToolCallDetailsProps {
+  /** Whether the tool call is currently streaming. */
   isStreaming: boolean;
+  /** Elements to render inside the details panel. */
   children: React.ReactNode;
+  /** Optional additional CSS classes. */
   className?: string;
 }
 
-export function ReasoningDetails({ isStreaming, children, className }: ReasoningDetailsProps) {
+/**
+ * Collapsible panel used to render tool call invocations and reasoning details.
+ */
+export function ToolCallDetails({ isStreaming, children, className }: ToolCallDetailsProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [scrollState, setScrollState] = React.useState({
     isAtTop: true,
@@ -105,7 +111,7 @@ export function ReasoningDetails({ isStreaming, children, className }: Reasoning
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-card-foreground">
-                {isStreaming ? "Thinking" : "Reasoning details"}
+                {isStreaming ? "Executing tool" : "Tool call details"}
               </span>
               {!isStreaming && (
                 <span className="text-xs text-muted-foreground">

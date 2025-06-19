@@ -5,7 +5,7 @@ import { ConvexError, v } from "convex/values";
 import { requireOwnThread, requireUserId } from "../utils/threadOwnership";
 import { internal } from "./_generated/api";
 import { internalAction, mutation, query } from "./_generated/server";
-import agent, { openrouter } from "./agent";
+import agent, { openrouter, webSearchTool } from "./agent";
 import { allowedModels, defaultModel } from "./models";
 
 /**
@@ -23,8 +23,9 @@ export const streamMessageAsynchronously = mutation({
     prompt: v.string(), // User message
     threadId: v.string(),
     model: v.optional(v.string()),
+    useWebSearch: v.optional(v.boolean()),
   },
-  handler: async (ctx, { prompt, threadId, model }) => {
+  handler: async (ctx, { prompt, threadId, model, useWebSearch }) => {
     const userId = await requireUserId(ctx);
 
     if (!userId) {
@@ -51,6 +52,7 @@ export const streamMessageAsynchronously = mutation({
       threadId,
       promptMessageId: messageId,
       model,
+      useWebSearch,
     });
 
     return { threadId };
@@ -58,12 +60,22 @@ export const streamMessageAsynchronously = mutation({
 });
 
 export const streamMessage = internalAction({
-  args: { promptMessageId: v.string(), threadId: v.string(), model: v.optional(v.string()) },
-  handler: async (ctx, { promptMessageId, threadId, model }) => {
+  args: {
+    promptMessageId: v.string(),
+    threadId: v.string(),
+    model: v.optional(v.string()),
+    useWebSearch: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { promptMessageId, threadId, model, useWebSearch }) => {
     const { thread } = await agent.continueThread(ctx, { threadId });
     const modelId = model && isAllowedModel(model) ? model : defaultModel;
     const result = await thread.streamText(
-      { promptMessageId, model: openrouter.chat(modelId) },
+      {
+        promptMessageId,
+        model: openrouter.chat(modelId),
+        tools: useWebSearch ? { webSearch: webSearchTool } : undefined,
+        maxSteps: 5,
+      },
       { saveStreamDeltas: true },
     );
     await result.consumeStream();
