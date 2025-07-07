@@ -11,6 +11,13 @@ import { query } from "./_generated/server";
  */
 export const allowedModels = [
   {
+    id: "google/gemini-2.5-flash-lite-preview-06-17",
+    name: "Gemini 2.5 Flash Lite (06-17)",
+    gateway: "openrouter",
+    supportsImageUploads: false,
+    supportsTools: false,
+  },
+  {
     id: "qwen/qwen3-32b-04-28:free",
     name: "Qwen3 32B",
     gateway: "openrouter",
