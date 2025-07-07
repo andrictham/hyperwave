@@ -16,6 +16,7 @@ export const allowedModels = [
     gateway: "openrouter",
     supportsImageUploads: false,
     supportsTools: false,
+    reasoning: true,
   },
   {
     id: "qwen/qwen3-32b-04-28:free",
@@ -122,6 +123,7 @@ export const listModels = query({
         gateway: v.string(),
         supportsTools: v.optional(v.boolean()),
         supportsImageUploads: v.optional(v.boolean()),
+        reasoning: v.optional(v.boolean()),
       }),
     ),
   }),
