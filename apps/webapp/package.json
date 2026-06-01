@@ -19,7 +19,7 @@
     "@vitejs/plugin-react": "^4.5.2",
     "postcss": "^8.5.5",
     "tailwindcss": "^4.1.10",
-    "vite": "^6.3.5"
+    "vite": "^6.4.2"
   },
   "dependencies": {
     "@convex-dev/agent": "^0.1.9",
